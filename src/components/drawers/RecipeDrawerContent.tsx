@@ -307,20 +307,23 @@ export function RecipeDrawerContent() {
                   Portionen
                 </Label>
                 <div className="relative">
-                  <Input
+                  <select
                     id="r-servings"
-                    type="number"
-                    min={1}
                     value={servings}
                     onChange={(e) =>
                       updateRecipeDraft({
-                        servings: parseFloat(e.target.value) || 1,
+                        servings: parseInt(e.target.value) || 1,
                       })
                     }
-                    className="pr-8"
-                  />
-                  <span className="absolute right-2 top-2.5 text-xs text-muted-foreground">
-                    Port.
+                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs appearance-none pr-8">
+                    {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n} Port.
+                      </option>
+                    ))}
+                  </select>
+                  <span className="absolute right-2 top-2.5 text-xs text-muted-foreground pointer-events-none">
+                    ▼
                   </span>
                 </div>
               </div>
@@ -396,8 +399,8 @@ export function RecipeDrawerContent() {
         </div>
 
         {/* Footer / Summary */}
-        <div className="border-t bg-card shrink-0 p-4 pb-6 space-y-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-          <div className="space-y-2">
+        <div className="border-t bg-card shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+          <div className="px-4 py-3 space-y-1">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Pro Portion
             </div>
@@ -429,25 +432,28 @@ export function RecipeDrawerContent() {
             </div>
           </div>
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex w-full">
             {mode === "edit" && editId ? (
               <Button
                 variant="destructive"
-                size="icon"
-                className="shrink-0"
+                className="shrink-0 rounded-none h-14 px-6"
                 onClick={() => setConfirmDeleteOpen(true)}>
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Rezept löschen</span>
               </Button>
             ) : null}
             <Button
-              className="flex-1"
+              className="flex-1 rounded-none h-14"
               onClick={handleSaveRecipe}
               disabled={!name || items.length === 0}>
               <Save className="h-4 w-4" />
               Speichern
             </Button>
           </div>
+          <div
+            className="bg-primary w-full"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+          />
         </div>
 
         {/* Scanner Overlay */}

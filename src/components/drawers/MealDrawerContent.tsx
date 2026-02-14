@@ -366,8 +366,8 @@ export function MealDrawerContent() {
         </div>
 
         {/* Footer / Summary */}
-        <div className="border-t bg-card shrink-0 p-4 pb-6 space-y-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-          <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+        <div className="border-t bg-card shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+          <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground px-4 py-3">
             <div>
               <span className="font-semibold text-foreground">
                 {Math.round(totals.calories)}
@@ -394,25 +394,28 @@ export function MealDrawerContent() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex w-full">
             {mode === "edit" && editId ? (
               <Button
                 variant="destructive"
-                size="icon"
-                className="shrink-0"
+                className="shrink-0 rounded-none h-14 px-6"
                 onClick={() => setConfirmDeleteOpen(true)}>
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Mahlzeit löschen</span>
               </Button>
             ) : null}
             <Button
-              className="flex-1"
+              className="flex-1 rounded-none h-14"
               onClick={handleCreateMeal}
               disabled={items.length === 0}>
               <Save className="h-4 w-4" />
               Speichern
             </Button>
           </div>
+          <div
+            className="bg-primary w-full"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+          />
         </div>
 
         {/* Scanner Overlay */}

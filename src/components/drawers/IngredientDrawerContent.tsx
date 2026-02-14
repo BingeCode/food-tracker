@@ -2,7 +2,6 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerFooter,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,15 +182,15 @@ export function IngredientDrawerContent() {
 
   return (
     <>
-      <DrawerContent className="max-h-[96dvh]">
-        <div className="mx-auto w-full max-w-md flex flex-col h-full max-h-[96dvh]">
-          <DrawerHeader>
+      <DrawerContent className="h-[95vh] flex flex-col">
+        <div className="mx-auto w-full max-w-md flex flex-col h-full bg-background rounded-t-xl overflow-hidden">
+          <DrawerHeader className="shrink-0">
             <DrawerTitle>
               {mode === "create" ? "Zutat hinzufügen" : "Zutat bearbeiten"}
             </DrawerTitle>
           </DrawerHeader>
 
-          <div className="p-4 overflow-y-auto flex-1 space-y-6 pb-20">
+          <div className="p-4 overflow-y-auto flex-1 space-y-6">
             {/* Barcode Section */}
             <div className="space-y-2">
               <Label htmlFor="barcode">Barcode</Label>
@@ -301,26 +300,31 @@ export function IngredientDrawerContent() {
             </div>
           </div>
 
-          <DrawerFooter className="bg-background pt-2 pb-8 px-4 border-t sticky bottom-0 z-10 w-full max-w-md mx-auto">
-            <div className="flex gap-2 w-full">
+          {/* Footer */}
+          <div className="border-t bg-card shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex w-full">
               {mode === "edit" && ingredientDraft.editId ? (
                 <Button
                   variant="destructive"
-                  size="icon"
-                  className="shrink-0"
+                  className="shrink-0 rounded-none h-14 px-6"
                   onClick={() => setConfirmDeleteOpen(true)}>
                   <Trash2 className="h-4 w-4" />
                   <span className="sr-only">Zutat löschen</span>
                 </Button>
               ) : null}
               <Button
-                className="flex-1"
+                className="flex-1 rounded-none h-14"
                 onClick={onSave}
                 disabled={!name.trim()}>
                 Speichern
               </Button>
             </div>
-          </DrawerFooter>
+            {/* Safe area spacer for iPhones */}
+            <div
+              className="bg-primary w-full"
+              style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+            />
+          </div>
         </div>
       </DrawerContent>
 

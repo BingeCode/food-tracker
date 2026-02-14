@@ -2,7 +2,6 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerFooter,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -242,20 +241,26 @@ export function GoalsDrawerContent() {
           </div>
         </div>
 
-        <DrawerFooter>
-          <div className="flex gap-2">
+        <div className="border-t bg-card shrink-0">
+          <div className="flex w-full">
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 rounded-none h-14 border-0 border-r"
               onClick={closeGoalsDrawer}>
               Abbrechen
             </Button>
-            <Button className="flex-1 gap-2" onClick={handleSave}>
+            <Button
+              className="flex-1 rounded-none h-14 gap-2"
+              onClick={handleSave}>
               <Save className="h-4 w-4" />
               Speichern
             </Button>
           </div>
-        </DrawerFooter>
+          <div
+            className="bg-primary w-full"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+          />
+        </div>
       </div>
     </DrawerContent>
   );
