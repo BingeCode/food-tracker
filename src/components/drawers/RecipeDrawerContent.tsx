@@ -346,7 +346,7 @@ export function RecipeDrawerContent() {
           </div>
 
           {/* Items List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 pb-6 space-y-3">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm">
                 <p>Keine Zutaten.</p>
@@ -396,7 +396,7 @@ export function RecipeDrawerContent() {
         </div>
 
         {/* Footer / Summary */}
-        <div className="border-t bg-card shrink-0 p-4 pb-8 space-y-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <div className="border-t bg-card shrink-0 p-4 pb-6 space-y-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
           <div className="space-y-2">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Pro Portion

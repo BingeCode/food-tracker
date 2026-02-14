@@ -56,20 +56,27 @@ export function BarcodeScanner({ onScan, onClose, open }: BarcodeScannerProps) {
       const formatsToSupport = [
         Html5QrcodeSupportedFormats.EAN_13,
         Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
       ];
 
       // Prefer back camera
       const config = {
-        fps: 10,
+        fps: 5,
         qrbox: { width: 250, height: 250 },
         formatsToSupport,
+        rememberLastUsedCamera: true,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        },
       };
 
       await scanner.start(
         { facingMode: "environment" },
         config,
         (decodedText) => {
-          onScan(decodedText);
+          onScan(decodedText.trim());
           stopScanner();
         },
         () => {

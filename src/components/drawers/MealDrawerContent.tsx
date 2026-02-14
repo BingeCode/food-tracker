@@ -285,13 +285,13 @@ export function MealDrawerContent() {
                 type="date"
                 value={date}
                 onChange={(e) => updateMealDraft({ date: e.target.value })}
-                className="w-auto h-8 text-xs"
+                className="w-auto h-9 text-sm"
               />
               <Input
                 type="time"
                 value={time}
                 onChange={(e) => updateMealDraft({ time: e.target.value })}
-                className="w-20 h-8 text-xs"
+                className="w-24 h-9 text-sm"
               />
             </div>
           </div>
@@ -315,7 +315,7 @@ export function MealDrawerContent() {
           </div>
 
           {/* Items List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 pb-6 space-y-3">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm">
                 <p>Noch keine Lebensmittel hinzugefügt.</p>
@@ -366,7 +366,7 @@ export function MealDrawerContent() {
         </div>
 
         {/* Footer / Summary */}
-        <div className="border-t bg-card shrink-0 p-4 pb-8 space-y-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <div className="border-t bg-card shrink-0 p-4 pb-6 space-y-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
           <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
             <div>
               <span className="font-semibold text-foreground">

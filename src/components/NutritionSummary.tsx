@@ -12,7 +12,7 @@ export function NutritionSummary({ current, goals }: NutritionSummaryProps) {
 
   return (
     <button
-      onClick={openGoals}
+      onClick={() => openGoals()}
       className="w-full bg-background/95 backdrop-blur z-40 border-b px-4 py-3 sticky top-0 md:static flex flex-wrap items-center justify-between text-sm transition-colors hover:bg-muted/50">
       <div className="font-bold text-base">
         {formatCompact(current.calories, goals.calories)}

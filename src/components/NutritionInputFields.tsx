@@ -36,17 +36,14 @@ export function NutritionInputFields({
       {fields.map(({ key, label, unit, step }) => (
         <div
           key={key}
-          className={cn("relative", key === "calories" && "col-span-2")}>
-          <Label htmlFor={`nutri-${key}`} className="sr-only">
-            {label}
-          </Label>
+          className={cn("space-y-1", key === "calories" && "col-span-2")}>
+          <Label htmlFor={`nutri-${key}`}>{label}</Label>
           <div className="relative">
             <Input
               id={`nutri-${key}`}
               type="number"
               inputMode="decimal"
               step={step}
-              placeholder={label}
               value={values[key] || ""}
               onChange={(e) => onChange(key, parseFloat(e.target.value) || 0)}
               className="pr-12 tabular-nums"

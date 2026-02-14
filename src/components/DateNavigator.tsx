@@ -2,13 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addDays, isToday, isYesterday, isTomorrow } from "date-fns";
 import { de } from "date-fns/locale";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 interface DateNavigatorProps {
@@ -22,7 +16,6 @@ export function DateNavigator({
   onChange,
   className,
 }: DateNavigatorProps) {
-  const [open, setOpen] = useState(false);
   const currentDate = new Date(date);
 
   const prevDate = () => {
@@ -33,13 +26,6 @@ export function DateNavigator({
     onChange(format(addDays(currentDate, 1), "yyyy-MM-dd"));
   };
 
-  const onSelect = (d: Date | undefined) => {
-    if (d) {
-      onChange(format(d, "yyyy-MM-dd"));
-      setOpen(false);
-    }
-  };
-
   let formattedDate = format(currentDate, "EEEE, d. MMM", { locale: de });
   if (isToday(currentDate)) formattedDate = "Heute";
   if (isYesterday(currentDate)) formattedDate = "Gestern";
@@ -48,7 +34,7 @@ export function DateNavigator({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-4 py-2 border-t bg-background/95 backdrop-blur z-40 supports-[backdrop-filter]:bg-background/60",
+        "flex items-center justify-between px-4 py-2 bg-background/95 backdrop-blur z-40 supports-[backdrop-filter]:bg-background/60",
         className,
       )}>
       <Button variant="ghost" size="icon" onClick={prevDate}>
@@ -56,24 +42,20 @@ export function DateNavigator({
         <span className="sr-only">Previous day</span>
       </Button>
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            className="font-semibold text-base min-w-[140px] tabular-nums">
-            {formattedDate}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="center">
-          <Calendar
-            mode="single"
-            selected={currentDate}
-            onSelect={onSelect}
-            initialFocus
-            locale={de}
-          />
-        </PopoverContent>
-      </Popover>
+      <label className="relative inline-flex items-center justify-center min-w-[140px]">
+        <Button
+          variant="ghost"
+          className="font-semibold text-base min-w-[140px] tabular-nums">
+          {formattedDate}
+        </Button>
+        <Input
+          type="date"
+          value={date}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+          aria-label="Datum auswählen"
+        />
+      </label>
 
       <Button variant="ghost" size="icon" onClick={nextDate}>
         <ChevronRight className="h-5 w-5" />
