@@ -339,7 +339,7 @@ export function RecipeDrawerContent() {
           </div>
 
           {/* Items List */}
-          <div className="flex-1 overflow-y-auto p-4 pb-6 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm">
                 <p>Keine Zutaten.</p>
@@ -386,60 +386,62 @@ export function RecipeDrawerContent() {
                 </div>
               ))
             )}
+          </div>
+        </div>
 
-            {/* Footer / Summary */}
-            <div className="pt-4 space-y-3">
-              <div className="space-y-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Pro Portion
-                </div>
-                <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
-                  <div>
-                    <span className="font-semibold text-foreground">
-                      {Math.round(perServing.calories)}
-                    </span>{" "}
-                    kcal
-                  </div>
-                  <div>
-                    <span className="font-semibold text-foreground">
-                      {Math.round(perServing.protein)}g
-                    </span>{" "}
-                    Prot
-                  </div>
-                  <div>
-                    <span className="font-semibold text-foreground">
-                      {Math.round(perServing.carbs)}g
-                    </span>{" "}
-                    KH
-                  </div>
-                  <div>
-                    <span className="font-semibold text-foreground">
-                      {Math.round(perServing.fat)}g
-                    </span>{" "}
-                    Fett
-                  </div>
-                </div>
+        {/* Footer / Summary */}
+        <div className="shrink-0 border-t">
+          <div className="px-4 py-3 space-y-1">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Pro Portion
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+              <div>
+                <span className="font-semibold text-foreground">
+                  {Math.round(perServing.calories)}
+                </span>{" "}
+                kcal
               </div>
+              <div>
+                <span className="font-semibold text-foreground">
+                  {Math.round(perServing.protein)}g
+                </span>{" "}
+                Prot
+              </div>
+              <div>
+                <span className="font-semibold text-foreground">
+                  {Math.round(perServing.carbs)}g
+                </span>{" "}
+                KH
+              </div>
+              <div>
+                <span className="font-semibold text-foreground">
+                  {Math.round(perServing.fat)}g
+                </span>{" "}
+                Fett
+              </div>
+            </div>
+          </div>
 
-              <div className="flex gap-2">
-                {mode === "edit" && editId ? (
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={() => setConfirmDeleteOpen(true)}>
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Rezept löschen</span>
-                  </Button>
-                ) : null}
+          <div className="p-10 pt-6 pb-6">
+            <div className="flex gap-2">
+              {mode === "edit" && editId ? (
                 <Button
-                  className="flex-1"
-                  onClick={handleSaveRecipe}
-                  disabled={!name || items.length === 0}>
-                  <Save className="h-4 w-4" />
-                  Speichern
+                  variant="destructive"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => setConfirmDeleteOpen(true)}>
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Rezept löschen</span>
                 </Button>
-              </div>
+              ) : null}
+              <Button
+                className="flex-1"
+                onClick={handleSaveRecipe}
+                disabled={!name || items.length === 0}>
+                <Save className="h-4 w-4" />
+                Speichern
+              </Button>
             </div>
           </div>
         </div>

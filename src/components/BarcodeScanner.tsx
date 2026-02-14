@@ -116,7 +116,7 @@ export function BarcodeScanner({ onScan, onClose, open }: BarcodeScannerProps) {
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
       <DialogOverlay className="bg-black/80 backdrop-blur-sm" />
-      <DialogContent className="p-0 border-none bg-black text-white w-full h-[100dvh] max-w-none flex flex-col items-center justify-center [&>button]:hidden">
+      <DialogContent className="p-0 border-none bg-black text-white w-full h-dvh max-w-none flex flex-col items-center justify-center [&>button]:hidden">
         <div className="absolute top-4 right-4 z-50">
           <Button
             variant="secondary"

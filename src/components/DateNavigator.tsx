@@ -34,7 +34,7 @@ export function DateNavigator({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-4 py-2 bg-background/95 backdrop-blur z-40 supports-[backdrop-filter]:bg-background/60",
+        "flex items-center justify-between px-4 py-2 bg-background/95 backdrop-blur z-40 supports-backdrop-filter:bg-background/60",
         className,
       )}>
       <Button variant="ghost" size="icon" onClick={prevDate}>
@@ -42,10 +42,10 @@ export function DateNavigator({
         <span className="sr-only">Previous day</span>
       </Button>
 
-      <label className="relative inline-flex items-center justify-center min-w-[140px]">
+      <label className="relative inline-flex items-center justify-center min-w-35">
         <Button
           variant="ghost"
-          className="font-semibold text-base min-w-[140px] tabular-nums">
+          className="font-semibold text-base min-w-35 tabular-nums">
           {formattedDate}
         </Button>
         <Input

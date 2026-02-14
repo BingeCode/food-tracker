@@ -23,7 +23,7 @@ function App() {
 
   return (
     <HashRouter>
-      <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-background text-foreground antialiased font-sans">
+      <div className="h-dvh w-full flex flex-col overflow-hidden bg-background text-foreground antialiased font-sans">
         <main className="flex-1 overflow-hidden relative">
           <Routes>
             <Route path="/" element={<Navigate to="/log" replace />} />

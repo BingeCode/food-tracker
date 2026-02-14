@@ -276,7 +276,7 @@ export function IngredientDrawerContent() {
             </div>
 
             {/* Serving Size */}
-            <div className="space-y-2 pt-2 border-t">
+            <div className="space-y-2 pt-2 mb-6 border-t">
               <Label htmlFor="serving">Standardportion</Label>
               <div className="relative w-1/2">
                 <Input
@@ -301,7 +301,7 @@ export function IngredientDrawerContent() {
           </div>
 
           {/* Footer */}
-          <div className="p-4 pt-6">
+          <div className="p-10 pt-6 pb-6">
             <div className="flex gap-2">
               {mode === "edit" && ingredientDraft.editId ? (
                 <Button
