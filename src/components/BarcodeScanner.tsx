@@ -33,10 +33,22 @@ export function BarcodeScanner({ onScan, onClose, open }: BarcodeScannerProps) {
 
   const startScanner = async () => {
     try {
+      if (!window.isSecureContext) {
+        setError(
+          "Kamera benötigt HTTPS oder localhost. Bitte sichere Verbindung nutzen.",
+        );
+        return;
+      }
+
       if (scannerRef.current) {
         // Already running?
         return;
       }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+      });
+      stream.getTracks().forEach((track) => track.stop());
 
       const scanner = new Html5Qrcode(containerId);
       scannerRef.current = scanner;
@@ -66,12 +78,17 @@ export function BarcodeScanner({ onScan, onClose, open }: BarcodeScannerProps) {
       );
     } catch (err: unknown) {
       console.error("Failed to start scanner", err);
-      // Mostly permission errors or no camera
-      if (err instanceof Error) {
-        setError("Kamera Zugriff verweigert oder nicht verfügbar.");
-      } else {
-        setError("Kamera konnte nicht gestartet werden.");
+      if (err instanceof DOMException && err.name === "NotAllowedError") {
+        setError(
+          "Kamera-Zugriff wurde blockiert. Bitte Browser-Berechtigung erlauben.",
+        );
+        return;
       }
+      if (err instanceof DOMException && err.name === "NotFoundError") {
+        setError("Keine Kamera gefunden.");
+        return;
+      }
+      setError("Kamera konnte nicht gestartet werden.");
     }
   };
 

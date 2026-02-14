@@ -4,7 +4,7 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, ChefHat, ScanLine, Edit2 } from "lucide-react";
+import { Plus, Search, ChefHat, Carrot, Edit2 } from "lucide-react";
 
 export function RecipesIngredientsPage() {
   const [activeTab, setActiveTab] = useState("recipes");
@@ -28,7 +28,7 @@ export function RecipesIngredientsPage() {
               <ChefHat className="h-4 w-4" /> Rezepte
             </TabsTrigger>
             <TabsTrigger value="ingredients" className="gap-2">
-              <ScanLine className="h-4 w-4" /> Zutaten
+              <Carrot className="h-4 w-4" /> Zutaten
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -105,7 +105,7 @@ export function RecipesIngredientsPage() {
       </div>
 
       {/* FAB */}
-      <div className="absolute right-6 bottom-6 z-50">
+      <div className="absolute right-6 bottom-24 z-40">
         <Button
           size="icon"
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"

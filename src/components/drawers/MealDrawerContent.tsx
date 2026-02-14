@@ -9,11 +9,19 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
-import { Scan, Save, X } from "lucide-react";
+import { Scan, Save, Trash2, X } from "lucide-react";
 import type { MealItemDraft, Ingredient, Meal, MealItem } from "@/types";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { fetchProductByBarcode } from "@/lib/openfoodfacts";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function MealDrawerContent() {
   const {
@@ -29,6 +37,7 @@ export function MealDrawerContent() {
   const { open, mode, editId, date, time, items } = mealDraft;
   const isOnline = useOnlineStatus();
   const [isScanning, setIsScanning] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Load meal data if in edit mode
   useEffect(() => {
@@ -214,6 +223,27 @@ export function MealDrawerContent() {
     }
   };
 
+  const handleDeleteMeal = async () => {
+    if (mode !== "edit" || !editId) return;
+
+    try {
+      const mealItems = await db.mealItems
+        .where("mealId")
+        .equals(editId)
+        .toArray();
+      await db.mealItems.bulkDelete(
+        mealItems.map((item) => item.id!).filter(Boolean),
+      );
+      await db.meals.delete(editId);
+
+      setConfirmDeleteOpen(false);
+      clearMealDraft();
+      closeMealDrawer();
+    } catch (error) {
+      console.error("Failed to delete meal", error);
+    }
+  };
+
   const totals = useMemo(() => {
     return items.reduce(
       (acc, item) => {
@@ -365,14 +395,18 @@ export function MealDrawerContent() {
           </div>
 
           <div className="flex gap-2">
+            {mode === "edit" && editId ? (
+              <Button
+                variant="destructive"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setConfirmDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Mahlzeit löschen</span>
+              </Button>
+            ) : null}
             <Button
-              variant="outline"
               className="flex-1"
-              onClick={closeMealDrawer}>
-              Abbrechen
-            </Button>
-            <Button
-              className="flex-1 gap-2"
               onClick={handleCreateMeal}
               disabled={items.length === 0}>
               <Save className="h-4 w-4" />
@@ -387,6 +421,27 @@ export function MealDrawerContent() {
           onClose={() => setIsScanning(false)}
           onScan={handleScan}
         />
+
+        <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Mahlzeit löschen?</DialogTitle>
+              <DialogDescription>
+                Diese Aktion kann nicht rückgängig gemacht werden.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDeleteOpen(false)}>
+                Abbrechen
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteMeal}>
+                Löschen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DrawerContent>
   );

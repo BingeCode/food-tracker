@@ -10,7 +10,7 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
-import { Scan, Save, X } from "lucide-react";
+import { Scan, Save, Trash2, X } from "lucide-react";
 import type {
   MealItemDraft,
   Ingredient,
@@ -20,6 +20,14 @@ import type {
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { fetchProductByBarcode } from "@/lib/openfoodfacts";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function RecipeDrawerContent() {
   const {
@@ -35,6 +43,7 @@ export function RecipeDrawerContent() {
   const { open, mode, editId, name, items, servings } = recipeDraft;
   const isOnline = useOnlineStatus();
   const [isScanning, setIsScanning] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Load recipe data if in edit mode
   useEffect(() => {
@@ -205,6 +214,27 @@ export function RecipeDrawerContent() {
       closeRecipeDrawer();
     } catch (error) {
       console.error("Failed to save recipe", error);
+    }
+  };
+
+  const handleDeleteRecipe = async () => {
+    if (mode !== "edit" || !editId) return;
+
+    try {
+      const recipeItems = await db.recipeIngredients
+        .where("recipeId")
+        .equals(editId)
+        .toArray();
+      await db.recipeIngredients.bulkDelete(
+        recipeItems.map((item) => item.id!).filter(Boolean),
+      );
+      await db.recipes.delete(editId);
+
+      setConfirmDeleteOpen(false);
+      clearRecipeDraft();
+      closeRecipeDrawer();
+    } catch (error) {
+      console.error("Failed to delete recipe", error);
     }
   };
 
@@ -400,14 +430,18 @@ export function RecipeDrawerContent() {
           </div>
 
           <div className="flex gap-2 pt-2">
+            {mode === "edit" && editId ? (
+              <Button
+                variant="destructive"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setConfirmDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Rezept löschen</span>
+              </Button>
+            ) : null}
             <Button
-              variant="outline"
               className="flex-1"
-              onClick={closeRecipeDrawer}>
-              Abbrechen
-            </Button>
-            <Button
-              className="flex-1 gap-2"
               onClick={handleSaveRecipe}
               disabled={!name || items.length === 0}>
               <Save className="h-4 w-4" />
@@ -422,6 +456,27 @@ export function RecipeDrawerContent() {
           onClose={() => setIsScanning(false)}
           onScan={handleScan}
         />
+
+        <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Rezept löschen?</DialogTitle>
+              <DialogDescription>
+                Diese Aktion kann nicht rückgängig gemacht werden.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDeleteOpen(false)}>
+                Abbrechen
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteRecipe}>
+                Löschen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DrawerContent>
   );

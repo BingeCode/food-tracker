@@ -152,7 +152,7 @@ export function LogPage() {
       </div>
 
       {/* Floating Action Button (FAB) */}
-      <div className="absolute right-6 bottom-6 z-50">
+      <div className="absolute right-6 bottom-24 z-40">
         <Button
           size="icon"
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"

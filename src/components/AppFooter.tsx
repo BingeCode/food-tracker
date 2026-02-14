@@ -9,7 +9,7 @@ interface NavItem {
 }
 
 const items: NavItem[] = [
-  { label: "Log", icon: Calendar, path: "/" },
+  { label: "Log", icon: Calendar, path: "/log" },
   { label: "Rezepte/Zutaten", icon: BookOpen, path: "/recipes" },
 ];
 
@@ -22,7 +22,9 @@ export function AppFooter() {
     <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
       <div className="flex h-16 max-w-md mx-auto items-center justify-around px-4">
         {items.map((item) => {
-          const isActive = pathname === item.path;
+          const isActive =
+            pathname === item.path ||
+            (item.path !== "/log" && pathname.startsWith(item.path));
           return (
             <button
               key={item.path}
