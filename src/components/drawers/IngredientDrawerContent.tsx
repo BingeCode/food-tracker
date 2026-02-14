@@ -282,7 +282,7 @@ export function IngredientDrawerContent() {
                 <Input
                   id="serving"
                   type="number"
-                  inputMode="decimal"
+                  inputMode="tel"
                   value={defaultServing || ""}
                   onChange={(e) =>
                     updateIngredientDraft({
@@ -301,29 +301,25 @@ export function IngredientDrawerContent() {
           </div>
 
           {/* Footer */}
-          <div className="border-t bg-card shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-            <div className="flex w-full">
+          <div className="p-4 pt-6">
+            <div className="flex gap-2">
               {mode === "edit" && ingredientDraft.editId ? (
                 <Button
                   variant="destructive"
-                  className="shrink-0 rounded-none h-14 px-6"
+                  size="icon"
+                  className="shrink-0"
                   onClick={() => setConfirmDeleteOpen(true)}>
                   <Trash2 className="h-4 w-4" />
                   <span className="sr-only">Zutat löschen</span>
                 </Button>
               ) : null}
               <Button
-                className="flex-1 rounded-none h-14"
+                className="flex-1"
                 onClick={onSave}
                 disabled={!name.trim()}>
                 Speichern
               </Button>
             </div>
-            {/* Safe area spacer for iPhones */}
-            <div
-              className="bg-primary w-full"
-              style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-            />
           </div>
         </div>
       </DrawerContent>

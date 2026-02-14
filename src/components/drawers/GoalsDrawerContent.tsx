@@ -158,6 +158,7 @@ export function GoalsDrawerContent() {
             <Label>Kalorien (kcal)</Label>
             <Input
               type="number"
+              inputMode="tel"
               value={caloriesGoal}
               onChange={(e) =>
                 updateGoalsDraft({
@@ -172,6 +173,7 @@ export function GoalsDrawerContent() {
               <Label>Fett (g)</Label>
               <Input
                 type="number"
+                inputMode="tel"
                 value={fatGoal}
                 onChange={(e) =>
                   updateGoalsDraft({ fatGoal: parseFloat(e.target.value) || 0 })
@@ -182,6 +184,7 @@ export function GoalsDrawerContent() {
               <Label>Kohlenhydrate (g)</Label>
               <Input
                 type="number"
+                inputMode="tel"
                 value={carbsGoal}
                 onChange={(e) =>
                   updateGoalsDraft({
@@ -194,6 +197,7 @@ export function GoalsDrawerContent() {
               <Label>Eiweiß (g)</Label>
               <Input
                 type="number"
+                inputMode="tel"
                 value={proteinGoal}
                 onChange={(e) =>
                   updateGoalsDraft({
@@ -206,6 +210,7 @@ export function GoalsDrawerContent() {
               <Label>Zucker (g)</Label>
               <Input
                 type="number"
+                inputMode="tel"
                 value={sugarGoal}
                 onChange={(e) =>
                   updateGoalsDraft({
@@ -218,6 +223,7 @@ export function GoalsDrawerContent() {
               <Label>Salz (g)</Label>
               <Input
                 type="number"
+                inputMode="tel"
                 value={saltGoal}
                 onChange={(e) =>
                   updateGoalsDraft({
@@ -230,6 +236,7 @@ export function GoalsDrawerContent() {
               <Label>Ballaststoffe (g)</Label>
               <Input
                 type="number"
+                inputMode="tel"
                 value={fiberGoal}
                 onChange={(e) =>
                   updateGoalsDraft({
@@ -241,25 +248,19 @@ export function GoalsDrawerContent() {
           </div>
         </div>
 
-        <div className="border-t bg-card shrink-0">
-          <div className="flex w-full">
+        <div className="p-4 pt-2">
+          <div className="flex gap-2">
             <Button
               variant="outline"
-              className="flex-1 rounded-none h-14 border-0 border-r"
+              className="flex-1"
               onClick={closeGoalsDrawer}>
               Abbrechen
             </Button>
-            <Button
-              className="flex-1 rounded-none h-14 gap-2"
-              onClick={handleSave}>
+            <Button className="flex-1 gap-2" onClick={handleSave}>
               <Save className="h-4 w-4" />
               Speichern
             </Button>
           </div>
-          <div
-            className="bg-primary w-full"
-            style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-          />
         </div>
       </div>
     </DrawerContent>
