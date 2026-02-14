@@ -106,20 +106,25 @@ export interface MealItemDraft {
   name: string;
   amount: number;
   unit: "g" | "ml";
-  // For manual items without ingredientId
-  manualCalories?: number;
-  manualFat?: number;
-  manualCarbs?: number;
-  manualSugar?: number;
-  manualProtein?: number;
-  manualSalt?: number;
-  manualFiber?: number;
+
+  // Nutrition values per 100 units (snapshot from ingredient or manual input)
+  caloriesPer100: number;
+  fatPer100: number;
+  carbsPer100: number;
+  sugarPer100: number;
+  proteinPer100: number;
+  saltPer100: number;
+  fiberPer100: number;
+
+  // Legacy manual fields (optional, if we want to differentiate source)
+  manualName?: string;
 }
 
 export interface MealDraft {
   open: boolean;
   mode: "create" | "edit";
   editId?: number;
+  date: string; // YYYY-MM-DD
   time: string;
   inputMode: "search" | "manual";
   sourceRecipeId?: number;

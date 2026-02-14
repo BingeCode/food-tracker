@@ -1,0 +1,264 @@
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useDrawerStore } from "@/stores/drawer-store";
+import { db } from "@/lib/db";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { NutritionInputFields } from "@/components/NutritionInputFields";
+import { fetchProductByBarcode } from "@/lib/openfoodfacts";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useState } from "react";
+import { Scan, RotateCw } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export function IngredientDrawerContent() {
+  const {
+    ingredientDraft,
+    closeIngredientDrawer,
+    updateIngredientDraft,
+    clearIngredientDraft,
+  } = useDrawerStore();
+  const isOnline = useOnlineStatus();
+  const [isScanning, setIsScanning] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    open,
+    mode,
+    barcode,
+    name,
+    unit,
+    calories,
+    fat,
+    carbs,
+    sugar,
+    protein,
+    salt,
+    fiber,
+    defaultServing,
+  } = ingredientDraft;
+
+  const handleScan = async (code: string) => {
+    setIsScanning(false);
+    updateIngredientDraft({ barcode: code });
+    await loadApiData(code);
+  };
+
+  const loadApiData = async (code: string) => {
+    if (!isOnline || !code) return;
+    setIsLoading(true);
+    try {
+      const result = await fetchProductByBarcode(code);
+      if (result.found) {
+        updateIngredientDraft({
+          name: result.name || name,
+          unit: result.unit,
+          calories: result.calories,
+          fat: result.fat,
+          carbs: result.carbs,
+          sugar: result.sugar,
+          protein: result.protein,
+          salt: result.salt,
+          fiber: result.fiber,
+        });
+      }
+    } catch (error) {
+      console.error("API error", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onManualBarcodeBlur = () => {
+    if (barcode && isOnline) {
+      loadApiData(barcode);
+    }
+  };
+
+  const onSave = async () => {
+    if (!name.trim()) return;
+
+    if (mode === "create") {
+      await db.ingredients.add({
+        barcode,
+        name,
+        unit,
+        calories,
+        fat,
+        carbs,
+        sugar,
+        protein,
+        salt,
+        fiber,
+        defaultServing,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    } else if (mode === "edit" && ingredientDraft.editId) {
+      await db.ingredients.update(ingredientDraft.editId, {
+        barcode,
+        name,
+        unit,
+        calories,
+        fat,
+        carbs,
+        sugar,
+        protein,
+        salt,
+        fiber,
+        defaultServing,
+        updatedAt: new Date(),
+      });
+    }
+
+    clearIngredientDraft();
+    closeIngredientDrawer();
+  };
+
+  return (
+    <>
+      <Drawer
+        open={open}
+        onOpenChange={(val) => !val && closeIngredientDrawer()}>
+        <DrawerContent className="max-h-[96dvh]">
+          <div className="mx-auto w-full max-w-md flex flex-col h-full max-h-[96dvh]">
+            <DrawerHeader>
+              <DrawerTitle>
+                {mode === "create" ? "Zutat hinzufügen" : "Zutat bearbeiten"}
+              </DrawerTitle>
+            </DrawerHeader>
+
+            <div className="p-4 overflow-y-auto flex-1 space-y-6 pb-20">
+              {/* Barcode Section */}
+              <div className="space-y-2">
+                <Label htmlFor="barcode">Barcode</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="barcode"
+                    inputMode="numeric"
+                    placeholder="Scan oder manuell"
+                    value={barcode}
+                    onChange={(e) =>
+                      updateIngredientDraft({ barcode: e.target.value })
+                    }
+                    onBlur={onManualBarcodeBlur}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    disabled={!isOnline}
+                    onClick={() => setIsScanning(true)}>
+                    {isLoading ? (
+                      <RotateCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Scan className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">Scan</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="z.B. Haferflocken"
+                    value={name}
+                    onChange={(e) =>
+                      updateIngredientDraft({ name: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Einheit</Label>
+                  <div className="flex rounded-md shadow-sm border p-1 bg-muted/20 w-max">
+                    <button
+                      type="button"
+                      className={cn(
+                        "px-4 py-1.5 text-sm font-medium rounded-sm transition-all",
+                        unit === "g"
+                          ? "bg-background shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() => updateIngredientDraft({ unit: "g" })}>
+                      Gramm (g)
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        "px-4 py-1.5 text-sm font-medium rounded-sm transition-all",
+                        unit === "ml"
+                          ? "bg-background shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() => updateIngredientDraft({ unit: "ml" })}>
+                      Milliliter (ml)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nutrition */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm text-muted-foreground">
+                  Nährwerte pro 100{unit}
+                </h4>
+                <NutritionInputFields
+                  values={{ calories, fat, carbs, sugar, protein, salt, fiber }}
+                  onChange={(key, val) => updateIngredientDraft({ [key]: val })}
+                />
+              </div>
+
+              {/* Serving Size */}
+              <div className="space-y-2 pt-2 border-t">
+                <Label htmlFor="serving">Standardportion</Label>
+                <div className="relative w-1/2">
+                  <Input
+                    id="serving"
+                    type="number"
+                    inputMode="decimal"
+                    value={defaultServing || ""}
+                    onChange={(e) =>
+                      updateIngredientDraft({
+                        defaultServing: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="pr-10"
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    <span className="text-muted-foreground text-xs font-medium">
+                      {unit}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DrawerFooter className="bg-background pt-2 pb-8 px-4 border-t sticky bottom-0 z-10 w-full max-w-md mx-auto">
+              <Button onClick={onSave} disabled={!name.trim()}>
+                Speichern
+              </Button>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <BarcodeScanner
+        open={isScanning}
+        onScan={handleScan}
+        onClose={() => setIsScanning(false)}
+      />
+    </>
+  );
+}

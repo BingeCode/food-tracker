@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { format } from "date-fns";
 import type {
   MealDraft,
   RecipeDraft,
@@ -14,10 +15,15 @@ function getTimeNow(): string {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
+function getToday(): string {
+  return format(new Date(), "yyyy-MM-dd");
+}
+
 const defaultMealDraft: MealDraft = {
   open: false,
   mode: "create",
   time: getTimeNow(),
+  date: getToday(),
   inputMode: "search",
   items: [],
   saveAsRecipe: false,
@@ -68,7 +74,11 @@ interface DrawerStore {
   goalsDraft: GoalsDraft;
 
   // ── Meal actions ──────────────────────────────────────────
-  openMealDrawer: (mode: "create" | "edit", editId?: number) => void;
+  openMealDrawer: (
+    mode: "create" | "edit",
+    editId?: number,
+    date?: string,
+  ) => void;
   closeMealDrawer: () => void;
   updateMealDraft: (partial: Partial<MealDraft>) => void;
   setMealItems: (items: MealItemDraft[]) => void;
@@ -94,7 +104,7 @@ interface DrawerStore {
   clearIngredientDraft: () => void;
 
   // ── Goals actions ─────────────────────────────────────────
-  openGoalsDrawer: () => void;
+  openGoalsDrawer: (date?: string) => void;
   closeGoalsDrawer: () => void;
   updateGoalsDraft: (partial: Partial<GoalsDraft>) => void;
   clearGoalsDraft: () => void;
@@ -113,17 +123,16 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   // ── Meal ──────────────────────────────────────────────────
 
-  openMealDrawer: (mode, editId) =>
+  openMealDrawer: (mode, editId, date) =>
     set((state) => ({
       mealDraft: {
         ...state.mealDraft,
         open: true,
         mode,
         editId,
+        ...(date ? { date } : {}),
         // Reset time to now when creating new
-        ...(mode === "create" && !state.mealDraft.editId
-          ? { time: getTimeNow() }
-          : {}),
+        ...(mode === "create" && !editId ? { time: getTimeNow() } : {}),
       },
     })),
 
@@ -243,9 +252,9 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   // ── Goals ─────────────────────────────────────────────────
 
-  openGoalsDrawer: () =>
+  openGoalsDrawer: (date) =>
     set((state) => ({
-      goalsDraft: { ...state.goalsDraft, open: true },
+      goalsDraft: { ...state.goalsDraft, open: true, overrideDate: date },
     })),
 
   closeGoalsDrawer: () =>

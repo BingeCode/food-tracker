@@ -246,3 +246,53 @@ export function useRecipeIngredients(recipeId: number | undefined) {
     return items;
   }, [recipeId]);
 }
+
+/**
+ * Live query for daily goals (returns standard or override for date).
+ */
+export function useDailyGoals(date: string) {
+  return useLiveQuery(async () => {
+    // 1. Check override
+    const override = await db.dailyGoalOverrides
+      .where("date")
+      .equals(date)
+      .first();
+
+    // 2. Get defaults
+    const defaults = await db.dailyGoals.orderBy("id").first();
+
+    // 3. Merge
+    // Default fallback values
+    const mergedGoals = {
+      caloriesGoal: 2000,
+      fatGoal: 70,
+      carbsGoal: 260,
+      proteinGoal: 50,
+      sugarGoal: 90,
+      saltGoal: 6,
+      fiberGoal: 30,
+      ...defaults,
+    };
+
+    if (override) {
+      if (override.caloriesGoal)
+        mergedGoals.caloriesGoal = override.caloriesGoal;
+      if (override.fatGoal) mergedGoals.fatGoal = override.fatGoal;
+      if (override.carbsGoal) mergedGoals.carbsGoal = override.carbsGoal;
+      if (override.proteinGoal) mergedGoals.proteinGoal = override.proteinGoal;
+      if (override.sugarGoal) mergedGoals.sugarGoal = override.sugarGoal;
+      if (override.saltGoal) mergedGoals.saltGoal = override.saltGoal;
+      if (override.fiberGoal) mergedGoals.fiberGoal = override.fiberGoal;
+    }
+
+    return {
+      calories: mergedGoals.caloriesGoal,
+      fat: mergedGoals.fatGoal,
+      carbs: mergedGoals.carbsGoal,
+      protein: mergedGoals.proteinGoal,
+      sugar: mergedGoals.sugarGoal ?? 0,
+      salt: mergedGoals.saltGoal ?? 0,
+      fiber: mergedGoals.fiberGoal ?? 0,
+    };
+  }, [date]);
+}
