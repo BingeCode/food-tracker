@@ -152,9 +152,17 @@ Ingredient  ←─┐
 - When an **ingredient is updated**, all referencing `mealIngredients` are updated with new unit/nutrition (`IngredientsPage.onSave`).
 - When an **ingredient is deleted**, its `mealIngredients` and `recipeIngredients` are cascade-deleted.
 
-### DB Schema
+### DB Schema & Migrations
 
-Fresh v1 schema — no migrations. The database is initialized with a single version containing all current tables. Old databases should be deleted and recreated.
+Dexie manages schema migrations automatically. Rules:
+
+1. **Never modify** an existing `version(N)` block — it represents a released schema.
+2. **Add** `version(N+1).stores({…}).upgrade(tx => …)` for any schema change.
+3. Non-indexed fields can be added to objects freely without a new version — only indexed columns (`stores()` strings) require a version bump.
+4. Dexie runs upgrade functions sequentially (v1 → v2 → v3 …) so users on any old version migrate forward safely.
+5. User data is **always preserved** across version upgrades.
+
+See the migration comment block in `src/lib/db.ts` for the authoritative rules.
 
 ---
 
