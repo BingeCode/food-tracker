@@ -84,7 +84,7 @@ export function GoalsPage() {
             type="number"
             inputMode="tel"
             value={calories}
-            onChange={(e) => setCalories(parseFloat(e.target.value) || 0)}
+            onChange={(e) => setCalories(parseFloat(e.target.value))}
           />
         </div>
 
@@ -105,7 +105,7 @@ export function GoalsPage() {
                 type="number"
                 inputMode="tel"
                 value={fatPct}
-                onChange={(e) => setFatPct(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setFatPct(parseFloat(e.target.value))}
               />
               <p className="text-xs text-muted-foreground tabular-nums">
                 = {fatGrams}g
@@ -117,7 +117,7 @@ export function GoalsPage() {
                 type="number"
                 inputMode="tel"
                 value={carbsPct}
-                onChange={(e) => setCarbsPct(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setCarbsPct(parseFloat(e.target.value))}
               />
               <p className="text-xs text-muted-foreground tabular-nums">
                 = {carbsGrams}g
@@ -129,7 +129,7 @@ export function GoalsPage() {
                 type="number"
                 inputMode="tel"
                 value={proteinPct}
-                onChange={(e) => setProteinPct(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setProteinPct(parseFloat(e.target.value))}
               />
               <p className="text-xs text-muted-foreground tabular-nums">
                 = {proteinGrams}g
@@ -145,7 +145,7 @@ export function GoalsPage() {
               type="number"
               inputMode="tel"
               value={sugar}
-              onChange={(e) => setSugar(parseFloat(e.target.value) || 0)}
+              onChange={(e) => setSugar(parseFloat(e.target.value))}
             />
           </div>
           <div className="space-y-1">
@@ -154,7 +154,7 @@ export function GoalsPage() {
               type="number"
               inputMode="tel"
               value={salt}
-              onChange={(e) => setSalt(parseFloat(e.target.value) || 0)}
+              onChange={(e) => setSalt(parseFloat(e.target.value))}
             />
           </div>
           <div className="space-y-1">
@@ -163,7 +163,7 @@ export function GoalsPage() {
               type="number"
               inputMode="tel"
               value={fiber}
-              onChange={(e) => setFiber(parseFloat(e.target.value) || 0)}
+              onChange={(e) => setFiber(parseFloat(e.target.value))}
             />
           </div>
         </div>
