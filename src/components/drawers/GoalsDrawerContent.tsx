@@ -1,20 +1,17 @@
-import {
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { db } from "@/lib/db";
 import { useCallback, useEffect } from "react";
-import { Save } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 export function GoalsDrawerContent() {
   const { goalsDraft, closeGoalsDrawer, updateGoalsDraft } = useDrawerStore();
+  const { navigateBack } = useViewTransitionNavigate();
 
   const {
     open,
@@ -137,9 +134,15 @@ export function GoalsDrawerContent() {
         }
       }
       closeGoalsDrawer();
+      navigateBack();
     } catch (e) {
       console.error("Failed to save goals", e);
     }
+  };
+
+  const handleBack = () => {
+    closeGoalsDrawer();
+    navigateBack();
   };
 
   const title = overrideDate
@@ -147,13 +150,19 @@ export function GoalsDrawerContent() {
     : "Standard-Tagesziele";
 
   return (
-    <DrawerContent>
-      <div className="mx-auto w-full max-w-md">
-        <DrawerHeader>
-          <DrawerTitle>{title}</DrawerTitle>
-        </DrawerHeader>
+    <div className="h-full w-full bg-background flex flex-col">
+      <div className="mx-auto w-full max-w-md h-full flex flex-col overflow-hidden">
+        <div className="p-4 border-b shrink-0">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">Zurück</span>
+            </Button>
+            <h2 className="text-foreground font-semibold">{title}</h2>
+          </div>
+        </div>
 
-        <div className="p-4 grid gap-4 overflow-y-auto max-h-[70vh]">
+        <div className="p-4 grid gap-4 overflow-y-auto flex-1">
           <div className="space-y-1">
             <Label>Kalorien (kcal)</Label>
             <Input
@@ -253,7 +262,7 @@ export function GoalsDrawerContent() {
             <Button
               variant="outline"
               className="flex-1"
-              onClick={closeGoalsDrawer}>
+              onClick={handleBack}>
               Abbrechen
             </Button>
             <Button className="flex-1 gap-2" onClick={handleSave}>
@@ -263,6 +272,6 @@ export function GoalsDrawerContent() {
           </div>
         </div>
       </div>
-    </DrawerContent>
+    </div>
   );
 }

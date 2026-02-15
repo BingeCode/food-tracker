@@ -1,6 +1,7 @@
 import { formatCompact } from "@/lib/nutrition";
 import { useDrawerStore } from "@/stores/drawer-store";
 import type { NutritionValues } from "@/types";
+import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 interface NutritionSummaryProps {
   current: NutritionValues;
@@ -9,10 +10,14 @@ interface NutritionSummaryProps {
 
 export function NutritionSummary({ current, goals }: NutritionSummaryProps) {
   const openGoals = useDrawerStore((state) => state.openGoalsDrawer);
+  const { navigateTo } = useViewTransitionNavigate();
 
   return (
     <button
-      onClick={() => openGoals()}
+      onClick={() => {
+        openGoals();
+        navigateTo("/goals");
+      }}
       className="w-full bg-background/95 backdrop-blur z-40 px-4 py-3 sticky top-0 md:static flex flex-wrap items-center justify-between text-sm transition-colors hover:bg-muted/50">
       <div className="font-bold text-base">
         {formatCompact(current.calories, goals.calories)}

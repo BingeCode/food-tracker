@@ -1,8 +1,3 @@
-import {
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +8,9 @@ import { NutritionInputFields } from "@/components/NutritionInputFields";
 import { fetchProductByBarcode } from "@/lib/openfoodfacts";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useEffect, useState } from "react";
-import { Scan, RotateCw, Trash2 } from "lucide-react";
+import { ArrowLeft, Scan, RotateCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +28,7 @@ export function IngredientDrawerContent() {
     clearIngredientDraft,
   } = useDrawerStore();
   const isOnline = useOnlineStatus();
+  const { navigateBack } = useViewTransitionNavigate();
   const [isScanning, setIsScanning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -148,6 +145,7 @@ export function IngredientDrawerContent() {
 
     clearIngredientDraft();
     closeIngredientDrawer();
+    navigateBack();
   };
 
   const onDelete = async () => {
@@ -175,20 +173,32 @@ export function IngredientDrawerContent() {
       setConfirmDeleteOpen(false);
       clearIngredientDraft();
       closeIngredientDrawer();
+      navigateBack();
     } catch (error) {
       console.error("Failed to delete ingredient", error);
     }
   };
 
+  const handleBack = () => {
+    closeIngredientDrawer();
+    navigateBack();
+  };
+
   return (
     <>
-      <DrawerContent className="h-[95vh] flex flex-col">
-        <div className="mx-auto w-full max-w-md flex flex-col h-full bg-background rounded-t-xl overflow-hidden">
-          <DrawerHeader className="shrink-0">
-            <DrawerTitle>
-              {mode === "create" ? "Zutat hinzufügen" : "Zutat bearbeiten"}
-            </DrawerTitle>
-          </DrawerHeader>
+      <div className="h-full w-full bg-background flex flex-col">
+        <div className="mx-auto w-full max-w-md flex flex-col h-full bg-background overflow-hidden">
+          <div className="shrink-0 p-4 border-b">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={handleBack}>
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Zurück</span>
+              </Button>
+              <h2 className="text-foreground font-semibold">
+                {mode === "create" ? "Zutat hinzufügen" : "Zutat bearbeiten"}
+              </h2>
+            </div>
+          </div>
 
           <div className="p-4 overflow-y-auto flex-1 space-y-6">
             {/* Barcode Section */}
@@ -322,7 +332,7 @@ export function IngredientDrawerContent() {
             </div>
           </div>
         </div>
-      </DrawerContent>
+      </div>
 
       <BarcodeScanner
         open={isScanning}

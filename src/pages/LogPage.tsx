@@ -7,12 +7,14 @@ import { NutritionSummary } from "@/components/NutritionSummary";
 import { Button } from "@/components/ui/button";
 import { Plus, Target, ChevronRight } from "lucide-react";
 import type { NutritionValues } from "@/types";
+import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 export function LogPage() {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const meals = useMealsByDate(date);
   const goals = useDailyGoals(date);
   const { openMealDrawer, openGoalsDrawer } = useDrawerStore();
+  const { navigateTo } = useViewTransitionNavigate();
 
   const fallbackGoals: NutritionValues & { calories: number } = {
     calories: 2700,
@@ -76,7 +78,10 @@ export function LogPage() {
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => openGoalsDrawer(date)}>
+              onClick={() => {
+                openGoalsDrawer(date);
+                navigateTo("/goals");
+              }}>
               <Target className="h-4 w-4" />
             </Button>
           </div>
@@ -96,7 +101,10 @@ export function LogPage() {
               <div
                 key={meal.id}
                 className="group rounded-lg border bg-card p-3 shadow-sm hover:shadow-md transition-all active:scale-[0.99]"
-                onClick={() => openMealDrawer("edit", meal.id)}>
+                onClick={() => {
+                  openMealDrawer("edit", meal.id);
+                  navigateTo("/meal");
+                }}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-foreground/80">
@@ -156,7 +164,10 @@ export function LogPage() {
         <Button
           size="icon"
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
-          onClick={() => openMealDrawer("create", undefined, date)}>
+          onClick={() => {
+            openMealDrawer("create", undefined, date);
+            navigateTo("/meal");
+          }}>
           <Plus className="h-6 w-6" />
         </Button>
       </div>

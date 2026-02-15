@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, ChefHat, Carrot, Edit2 } from "lucide-react";
+import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 export function RecipesIngredientsPage() {
   const [activeTab, setActiveTab] = useState("recipes");
@@ -16,6 +17,7 @@ export function RecipesIngredientsPage() {
   );
 
   const { openRecipeDrawer, openIngredientDrawer } = useDrawerStore();
+  const { navigateTo } = useViewTransitionNavigate();
 
   return (
     <div className="flex flex-col h-full bg-background relative overflow-hidden">
@@ -56,7 +58,10 @@ export function RecipesIngredientsPage() {
               <div
                 key={recipe.id}
                 className="flex items-center justify-between p-3 rounded-lg border bg-card shadow-sm"
-                onClick={() => openRecipeDrawer("edit", recipe.id)}>
+                onClick={() => {
+                  openRecipeDrawer("edit", recipe.id);
+                  navigateTo("/recipe");
+                }}>
                 <div>
                   <div className="font-semibold">{recipe.name}</div>
                   <div className="text-sm text-muted-foreground">
@@ -83,7 +88,10 @@ export function RecipesIngredientsPage() {
               <div
                 key={ing.id}
                 className="flex items-center justify-between p-3 rounded-lg border bg-card shadow-sm"
-                onClick={() => openIngredientDrawer("edit", ing.id)}>
+                onClick={() => {
+                  openIngredientDrawer("edit", ing.id);
+                  navigateTo("/ingredient");
+                }}>
                 <div>
                   <div className="font-semibold">{ing.name}</div>
                   <div className="text-sm text-muted-foreground">
@@ -109,11 +117,16 @@ export function RecipesIngredientsPage() {
         <Button
           size="icon"
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
-          onClick={() =>
-            activeTab === "recipes"
-              ? openRecipeDrawer("create")
-              : openIngredientDrawer("create")
-          }>
+          onClick={() => {
+            if (activeTab === "recipes") {
+              openRecipeDrawer("create");
+              navigateTo("/recipe");
+              return;
+            }
+
+            openIngredientDrawer("create");
+            navigateTo("/ingredient");
+          }}>
           <Plus className="h-6 w-6" />
         </Button>
       </div>

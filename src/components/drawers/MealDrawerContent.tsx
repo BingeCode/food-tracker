@@ -1,19 +1,15 @@
-import {
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
-import { Scan, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, Scan, Save, Trash2, X } from "lucide-react";
 import type { MealItemDraft, Ingredient, Meal, MealItem } from "@/types";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { fetchProductByBarcode } from "@/lib/openfoodfacts";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +32,7 @@ export function MealDrawerContent() {
 
   const { open, mode, editId, date, time, items } = mealDraft;
   const isOnline = useOnlineStatus();
+  const { navigateBack } = useViewTransitionNavigate();
   const [isScanning, setIsScanning] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
@@ -218,6 +215,7 @@ export function MealDrawerContent() {
 
       clearMealDraft();
       closeMealDrawer();
+      navigateBack();
     } catch (error) {
       console.error("Failed to save meal", error);
     }
@@ -239,9 +237,15 @@ export function MealDrawerContent() {
       setConfirmDeleteOpen(false);
       clearMealDraft();
       closeMealDrawer();
+      navigateBack();
     } catch (error) {
       console.error("Failed to delete meal", error);
     }
+  };
+
+  const handleBack = () => {
+    closeMealDrawer();
+    navigateBack();
   };
 
   const totals = useMemo(() => {
@@ -271,15 +275,21 @@ export function MealDrawerContent() {
   }, [items]);
 
   return (
-    <DrawerContent className="h-[95vh] flex flex-col">
-      <div className="mx-auto w-full max-w-md flex flex-col h-full bg-background rounded-t-xl overflow-hidden">
-        <DrawerHeader className="border-b shrink-0">
+    <div className="h-full w-full bg-background flex flex-col">
+      <div className="mx-auto w-full max-w-md flex flex-col h-full bg-background overflow-hidden">
+        <div className="border-b shrink-0 p-4">
           <div className="flex items-center justify-between">
-            <DrawerTitle>
-              {mode === "create"
-                ? "Mahlzeit hinzufügen"
-                : "Mahlzeit bearbeiten"}
-            </DrawerTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={handleBack}>
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Zurück</span>
+              </Button>
+              <h2 className="text-foreground font-semibold">
+                {mode === "create"
+                  ? "Mahlzeit hinzufügen"
+                  : "Mahlzeit bearbeiten"}
+              </h2>
+            </div>
             <div className="flex items-center gap-2">
               <Input
                 type="date"
@@ -295,7 +305,7 @@ export function MealDrawerContent() {
               />
             </div>
           </div>
-        </DrawerHeader>
+        </div>
 
         <div className="flex-1 overflow-hidden flex flex-col relative">
           {/* Add Item Section */}
@@ -446,6 +456,6 @@ export function MealDrawerContent() {
           </DialogContent>
         </Dialog>
       </div>
-    </DrawerContent>
+    </div>
   );
 }
