@@ -54,55 +54,7 @@ export function useMealsByDate(date: string): MealWithNutrition[] | undefined {
 }
 
 /**
- * Live query for a single meal with all items.
- */
-export function useMealById(mealId: number | undefined) {
-  return useLiveQuery(async () => {
-    if (!mealId) return undefined;
-    const meal = await db.meals.get(mealId);
-    if (!meal) return undefined;
-    const items = await db.mealItems.where("mealId").equals(mealId).toArray();
-    return { ...meal, items };
-  }, [mealId]);
-}
-
-/**
  * Live query for daily goals, merged with any overrides for the given date.
- */
-export function useGoalsForDate(date: string) {
-  return useLiveQuery(async () => {
-    const defaults = await db.dailyGoals.toCollection().first();
-    const override = await db.dailyGoalOverrides
-      .where("date")
-      .equals(date)
-      .first();
-
-    if (!defaults) {
-      return {
-        calories: 2700,
-        fat: 90,
-        carbs: 304,
-        protein: 169,
-        sugar: 50,
-        salt: 6,
-        fiber: 30,
-      };
-    }
-
-    return {
-      calories: override?.caloriesGoal ?? defaults.caloriesGoal,
-      fat: override?.fatGoal ?? defaults.fatGoal,
-      carbs: override?.carbsGoal ?? defaults.carbsGoal,
-      protein: override?.proteinGoal ?? defaults.proteinGoal,
-      sugar: override?.sugarGoal ?? defaults.sugarGoal ?? 50,
-      salt: override?.saltGoal ?? defaults.saltGoal ?? 6,
-      fiber: override?.fiberGoal ?? defaults.fiberGoal ?? 30,
-    };
-  }, [date]);
-}
-
-/**
- * Live query for daily nutrition totals.
  */
 export function useDayNutrition(date: string): NutritionValues | undefined {
   return useLiveQuery(async () => {
@@ -163,31 +115,6 @@ export function useRecipes(search?: string) {
     }
     return db.recipes.orderBy("updatedAt").reverse().toArray();
   }, [search]);
-}
-
-/**
- * Live query for recipe ingredients with their ingredient data.
- */
-export function useRecipeIngredients(recipeId: number | undefined) {
-  return useLiveQuery(async () => {
-    if (!recipeId) return [];
-    const ris = await db.recipeIngredients
-      .where("recipeId")
-      .equals(recipeId)
-      .toArray();
-
-    const items = await Promise.all(
-      ris.map(async (ri) => {
-        const ingredient = await db.ingredients.get(ri.ingredientId);
-        return {
-          ...ri,
-          ingredient,
-        };
-      }),
-    );
-
-    return items;
-  }, [recipeId]);
 }
 
 /**

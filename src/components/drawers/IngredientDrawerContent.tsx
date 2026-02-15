@@ -127,7 +127,8 @@ export function IngredientDrawerContent() {
         updatedAt: new Date(),
       });
     } else if (mode === "edit" && ingredientDraft.editId) {
-      await db.ingredients.update(ingredientDraft.editId, {
+      const ingredientId = ingredientDraft.editId;
+      await db.ingredients.update(ingredientId, {
         barcode,
         name,
         unit,
@@ -141,6 +142,30 @@ export function IngredientDrawerContent() {
         defaultServing,
         updatedAt: new Date(),
       });
+
+      // Propagate name/nutrition changes to all referencing meal items
+      const referencingItems = await db.mealItems
+        .where("ingredientId")
+        .equals(ingredientId)
+        .toArray();
+
+      if (referencingItems.length > 0) {
+        await Promise.all(
+          referencingItems.map((item) =>
+            db.mealItems.update(item.id!, {
+              name,
+              unit,
+              caloriesPer100: calories,
+              fatPer100: fat,
+              carbsPer100: carbs,
+              sugarPer100: sugar,
+              proteinPer100: protein,
+              saltPer100: salt,
+              fiberPer100: fiber,
+            }),
+          ),
+        );
+      }
     }
 
     clearIngredientDraft();
