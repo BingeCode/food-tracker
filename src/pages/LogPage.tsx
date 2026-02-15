@@ -5,7 +5,7 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import { DateNavigator } from "@/components/DateNavigator";
 import { NutritionSummary } from "@/components/NutritionSummary";
 import { Button } from "@/components/ui/button";
-import { Plus, Target, ChevronRight } from "lucide-react";
+import { Plus, ChevronRight } from "lucide-react";
 import type { NutritionValues } from "@/types";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
@@ -13,7 +13,7 @@ export function LogPage() {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const meals = useMealsByDate(date);
   const goals = useDailyGoals(date);
-  const { openMealDrawer, openGoalsDrawer } = useDrawerStore();
+  const { openMealDrawer } = useDrawerStore();
   const { navigateTo } = useViewTransitionNavigate();
 
   const fallbackGoals: NutritionValues & { calories: number } = {
@@ -62,33 +62,23 @@ export function LogPage() {
   }, [meals]);
 
   return (
-    <>
+    <div className="h-full flex flex-col min-h-0 gap-3">
       <div>
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm text-muted-foreground">
             Tagesübersicht
           </h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={() => {
-              openGoalsDrawer(date);
-              navigateTo("/goals");
-            }}>
-            <Target className="h-4 w-4" />
-          </Button>
         </div>
-        <div className="rounded-xl border bg-card shadow-sm">
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
           <NutritionSummary current={totals} goals={goals ?? fallbackGoals} />
         </div>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-h-0 flex flex-col">
         <h3 className="font-semibold text-sm text-muted-foreground pl-1">
           Mahlzeiten
         </h3>
 
-        <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
           {meals?.map((meal) => (
             <div
               key={meal.id}
@@ -159,6 +149,6 @@ export function LogPage() {
         </div>
       </div>
       <DateNavigator date={date} onChange={setDate} className="shrink-0" />
-    </>
+    </div>
   );
 }

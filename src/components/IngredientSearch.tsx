@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useIngredients } from "@/hooks/useMeals";
 import { cn } from "@/lib/utils";
 import type { Ingredient } from "@/types";
@@ -15,6 +15,7 @@ export function IngredientSearch({
   className,
 }: IngredientSearchProps) {
   const [term, setTerm] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   // We only run query if term length > 1 for performance
   const query = term.length > 1 ? term : undefined;
   const ingredients = useIngredients(query);
@@ -29,9 +30,10 @@ export function IngredientSearch({
       <div className="relative">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
+          ref={inputRef}
           type="search"
-          placeholder="Zutat hinzufügen..."
-          className="pl-9"
+          placeholder="Zutat suchen"
+          className="pl-9 pr-9"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
           onFocus={() => setIsFocused(true)}
@@ -40,6 +42,20 @@ export function IngredientSearch({
             setTimeout(() => setIsFocused(false), 200);
           }}
         />
+        {term ? (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setTerm("");
+              setIsFocused(true);
+              inputRef.current?.focus();
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label="Suche zurücksetzen">
+            <X className="h-4 w-4" />
+          </button>
+        ) : null}
       </div>
 
       {/* Results dropdown - below input */}
@@ -54,9 +70,12 @@ export function IngredientSearch({
               {ingredients.map((ing) => (
                 <button
                   key={ing.id}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     onSelect(ing);
                     setTerm("");
+                    setIsFocused(true);
+                    inputRef.current?.focus();
                   }}
                   className="w-full text-left p-3 hover:bg-muted/50 transition-colors">
                   <div className="font-medium text-sm">{ing.name}</div>

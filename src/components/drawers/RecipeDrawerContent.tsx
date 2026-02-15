@@ -5,7 +5,7 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, Scan, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, Plus, Scan, Save, Trash2, X } from "lucide-react";
 import type {
   MealItemDraft,
   Ingredient,
@@ -42,7 +42,6 @@ export function RecipeDrawerContent() {
   const [isScanning, setIsScanning] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-  // Load recipe data if in edit mode
   useEffect(() => {
     if (open && mode === "edit" && editId) {
       db.recipes.get(editId).then(async (recipe) => {
@@ -146,7 +145,6 @@ export function RecipeDrawerContent() {
 
       if (mode === "edit" && editId) {
         await db.recipes.update(editId, recipeData);
-        // Clear old items
         const oldItems = await db.recipeIngredients
           .where("recipeId")
           .equals(editId)
@@ -162,21 +160,11 @@ export function RecipeDrawerContent() {
         currentRecipeId = id;
       }
 
-      // Add items
-      // Note: We only support ingredients in recipes for now (no nested recipes or manual items without ingredientId)
-      // If we have manual items (from scan not saved), we should probably save them as ingredients first?
-      // Or just skip them (bad UX).
-      // Let's silently create "Ingredient" for manual items so we can link them?
-      // Or: RecipeIngredient schema requires ingredientId.
-      // We MUST ensure all items have ingredientId.
-
       const itemsToSave: Omit<RecipeIngredient, "id">[] = [];
       for (const item of items) {
         let ingredientId = item.ingredientId;
 
         if (!ingredientId) {
-          // Create new ingredient on the fly
-          // This happens if we scanned a product but didn't save it to DB yet
           const newIngId = await db.ingredients.add({
             name: item.name,
             unit: item.unit,
@@ -194,9 +182,7 @@ export function RecipeDrawerContent() {
           ingredientId = newIngId;
         }
 
-        if (!ingredientId) {
-          continue;
-        }
+        if (!ingredientId) continue;
 
         itemsToSave.push({
           recipeId: currentRecipeId!,
@@ -243,7 +229,7 @@ export function RecipeDrawerContent() {
   };
 
   const totals = useMemo(() => {
-    const total = items.reduce(
+    return items.reduce(
       (acc, item) => {
         const factor = item.amount / 100;
         return {
@@ -266,11 +252,6 @@ export function RecipeDrawerContent() {
         fiber: 0,
       },
     );
-
-    // Divide by servings for display "Per Serving"?
-    // NutritionSummary usually expects totals. We can show totals and let user do mental math, or show per serving.
-    // Let's show "Total for whole recipe" and maybe "Per serving" text below.
-    return total;
   }, [items]);
 
   const perServing = useMemo(() => {
@@ -287,203 +268,230 @@ export function RecipeDrawerContent() {
   }, [totals, servings]);
 
   return (
-    <div className="h-full w-full bg-background flex flex-col">
-      <div className="mx-auto w-full max-w-md flex flex-col h-full bg-background overflow-hidden">
-        <div className="border-b shrink-0 p-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Zurück</span>
-              </Button>
-              <h2 className="text-foreground font-semibold">
-                {mode === "create" ? "Rezept erstellen" : "Rezept bearbeiten"}
-              </h2>
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-1 space-y-1">
-                <Label htmlFor="r-name">Rezept Name</Label>
-                <Input
-                  id="r-name"
-                  value={name}
-                  onChange={(e) => updateRecipeDraft({ name: e.target.value })}
-                />
+    <>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" />
+          <span className="sr-only">Zurück</span>
+        </Button>
+        <h2 className="text-foreground font-semibold">
+          {mode === "create" ? "Rezept erstellen" : "Rezept bearbeiten"}
+        </h2>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="flex-1 space-y-1">
+          <Label htmlFor="r-name">Rezept Name</Label>
+          <Input
+            id="r-name"
+            value={name}
+            placeholder="Name eingeben..."
+            onChange={(e) => updateRecipeDraft({ name: e.target.value })}
+          />
+        </div>
+        <div className="w-20 space-y-1">
+          <Label htmlFor="r-servings">Portionen</Label>
+          <select
+            id="r-servings"
+            value={servings}
+            onChange={(e) =>
+              updateRecipeDraft({
+                servings: parseInt(e.target.value) || 1,
+              })
+            }
+            className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs">
+            {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-card shrink-0 z-10">
+        <div className="flex gap-2 mb-2">
+          <IngredientSearch
+            onSelect={handleSelectIngredient}
+            className="flex-1"
+          />
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setIsScanning(true)}>
+            <Scan className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto">
+        {items.map((item, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
+            <div className="flex-1 overflow-hidden">
+              <div className="font-medium text-sm truncate">{item.name}</div>
+              <div className="text-xs text-muted-foreground">
+                {Math.round(item.caloriesPer100)} kcal / 100{item.unit}
               </div>
-              <div className="w-20 space-y-1">
-                <Label htmlFor="r-servings">Portionen</Label>
-                <select
-                  id="r-servings"
-                  value={servings}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={async () => {
+                  let step = 100;
+
+                  if (item.ingredientId) {
+                    const ingredient = await db.ingredients.get(
+                      item.ingredientId,
+                    );
+                    step = ingredient?.defaultServing ?? 100;
+                  }
+
+                  updateRecipeItem(index, {
+                    amount: Math.max(0, (item.amount || 0) - step),
+                  });
+                }}>
+                <span className="text-base leading-none">-</span>
+                <span className="sr-only">Menge verringern</span>
+              </Button>
+
+              <div className="relative w-20">
+                <Input
+                  type="number"
+                  inputMode="tel"
+                  value={item.amount || ""}
                   onChange={(e) =>
-                    updateRecipeDraft({
-                      servings: parseInt(e.target.value) || 1,
+                    updateRecipeItem(index, {
+                      amount: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs">
-                  {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
+                  className="h-8 pr-8 text-right bg-background"
+                />
+                <span className="absolute right-3 top-2 text-xs text-muted-foreground">
+                  {item.unit}
+                </span>
               </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="flex-1 overflow-hidden flex flex-col relative">
-          {/* Add Item Section */}
-          <div className="p-4 border-b bg-card shrink-0 z-10">
-            <div className="flex gap-2 mb-2">
-              <IngredientSearch
-                onSelect={handleSelectIngredient}
-                className="flex-1"
-              />
               <Button
+                variant="outline"
                 size="icon"
-                variant="outline"
-                onClick={() => setIsScanning(true)}>
-                <Scan className="h-4 w-4" />
+                className="h-8 w-8"
+                onClick={async () => {
+                  let step = 100;
+
+                  if (item.ingredientId) {
+                    const ingredient = await db.ingredients.get(
+                      item.ingredientId,
+                    );
+                    step = ingredient?.defaultServing ?? 100;
+                  }
+
+                  updateRecipeItem(index, {
+                    amount: (item.amount || 0) + step,
+                  });
+                }}>
+                <Plus className="h-4 w-4" />
+                <span className="sr-only">Menge erhöhen</span>
               </Button>
-            </div>
-          </div>
 
-          {/* Items List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm">
-                <p>Keine Zutaten.</p>
-              </div>
-            ) : (
-              items.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
-                  <div className="flex-1 overflow-hidden">
-                    <div className="font-medium text-sm truncate">
-                      {item.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round(item.caloriesPer100)} kcal / 100{item.unit}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-24">
-                      <Input
-                        type="number"
-                        inputMode="tel"
-                        value={item.amount || ""}
-                        onChange={(e) =>
-                          updateRecipeItem(index, {
-                            amount: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        className="h-8 pr-8 text-right bg-background"
-                      />
-                      <span className="absolute right-3 top-2 text-xs text-muted-foreground">
-                        {item.unit}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => removeRecipeItem(index)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Footer / Summary */}
-        <div className="shrink-0 border-t">
-          <div className="px-4 py-3 space-y-1">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Pro Portion
-            </div>
-            <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
-              <div>
-                <span className="font-semibold text-foreground">
-                  {Math.round(perServing.calories)}
-                </span>{" "}
-                kcal
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">
-                  {Math.round(perServing.protein)}g
-                </span>{" "}
-                Prot
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">
-                  {Math.round(perServing.carbs)}g
-                </span>{" "}
-                KH
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">
-                  {Math.round(perServing.fat)}g
-                </span>{" "}
-                Fett
-              </div>
-            </div>
-          </div>
-
-          <div className="p-10 pt-6 pb-6">
-            <div className="flex gap-2">
-              {mode === "edit" && editId ? (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="shrink-0"
-                  onClick={() => setConfirmDeleteOpen(true)}>
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Rezept löschen</span>
-                </Button>
-              ) : null}
               <Button
-                className="flex-1"
-                onClick={handleSaveRecipe}
-                disabled={!name || items.length === 0}>
-                <Save className="h-4 w-4" />
-                Speichern
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                onClick={() => removeRecipeItem(index)}>
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </div>
-
-        {/* Scanner Overlay */}
-        <BarcodeScanner
-          open={isScanning}
-          onClose={() => setIsScanning(false)}
-          onScan={handleScan}
-        />
-
-        <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Rezept löschen?</DialogTitle>
-              <DialogDescription>
-                Diese Aktion kann nicht rückgängig gemacht werden.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setConfirmDeleteOpen(false)}>
-                Abbrechen
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteRecipe}>
-                Löschen
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        ))}
       </div>
-    </div>
+
+      <div className="shrink-0 border-t">
+        <div className="px-4 py-3 space-y-1">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Pro Portion
+          </div>
+          <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+            <div>
+              <span className="font-semibold text-foreground">
+                {Math.round(perServing.calories)}
+              </span>{" "}
+              kcal
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">
+                {Math.round(perServing.protein)}g
+              </span>{" "}
+              Prot
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">
+                {Math.round(perServing.carbs)}g
+              </span>{" "}
+              KH
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">
+                {Math.round(perServing.fat)}g
+              </span>{" "}
+              Fett
+            </div>
+          </div>
+        </div>
+
+        <div className="p-10 pt-6 pb-6">
+          <div className="flex gap-2">
+            {mode === "edit" && editId ? (
+              <Button
+                variant="destructive"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setConfirmDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Rezept löschen</span>
+              </Button>
+            ) : null}
+            <Button
+              className="flex-1"
+              onClick={handleSaveRecipe}
+              disabled={!name || items.length === 0}>
+              <Save className="h-4 w-4" />
+              Speichern
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <BarcodeScanner
+        open={isScanning}
+        onClose={() => setIsScanning(false)}
+        onScan={handleScan}
+      />
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rezept löschen?</DialogTitle>
+            <DialogDescription>
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteRecipe}>
+              Löschen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

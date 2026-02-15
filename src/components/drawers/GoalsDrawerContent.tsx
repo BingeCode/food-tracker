@@ -150,125 +150,114 @@ export function GoalsDrawerContent() {
     : "Standard-Tagesziele";
 
   return (
-    <div className="h-full w-full bg-background flex flex-col">
-      <div className="mx-auto w-full max-w-md h-full flex flex-col overflow-hidden">
-        <div className="p-4 border-b shrink-0">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={handleBack}>
-              <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Zurück</span>
-            </Button>
-            <h2 className="text-foreground font-semibold">{title}</h2>
-          </div>
+    <>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" />
+          <span className="sr-only">Zurück</span>
+        </Button>
+        <h2 className="text-foreground font-semibold">{title}</h2>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
+        <div className="space-y-1">
+          <Label>Kalorien (kcal)</Label>
+          <Input
+            type="number"
+            inputMode="tel"
+            value={caloriesGoal}
+            onChange={(e) =>
+              updateGoalsDraft({
+                caloriesGoal: parseFloat(e.target.value) || 0,
+              })
+            }
+          />
         </div>
 
-        <div className="p-4 grid gap-4 overflow-y-auto flex-1">
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <Label>Kalorien (kcal)</Label>
+            <Label>Fett (g)</Label>
             <Input
               type="number"
               inputMode="tel"
-              value={caloriesGoal}
+              value={fatGoal}
+              onChange={(e) =>
+                updateGoalsDraft({ fatGoal: parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Kohlenhydrate (g)</Label>
+            <Input
+              type="number"
+              inputMode="tel"
+              value={carbsGoal}
               onChange={(e) =>
                 updateGoalsDraft({
-                  caloriesGoal: parseFloat(e.target.value) || 0,
+                  carbsGoal: parseFloat(e.target.value) || 0,
                 })
               }
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Fett (g)</Label>
-              <Input
-                type="number"
-                inputMode="tel"
-                value={fatGoal}
-                onChange={(e) =>
-                  updateGoalsDraft({ fatGoal: parseFloat(e.target.value) || 0 })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Kohlenhydrate (g)</Label>
-              <Input
-                type="number"
-                inputMode="tel"
-                value={carbsGoal}
-                onChange={(e) =>
-                  updateGoalsDraft({
-                    carbsGoal: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Eiweiß (g)</Label>
-              <Input
-                type="number"
-                inputMode="tel"
-                value={proteinGoal}
-                onChange={(e) =>
-                  updateGoalsDraft({
-                    proteinGoal: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Zucker (g)</Label>
-              <Input
-                type="number"
-                inputMode="tel"
-                value={sugarGoal}
-                onChange={(e) =>
-                  updateGoalsDraft({
-                    sugarGoal: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Salz (g)</Label>
-              <Input
-                type="number"
-                inputMode="tel"
-                value={saltGoal}
-                onChange={(e) =>
-                  updateGoalsDraft({
-                    saltGoal: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Ballaststoffe (g)</Label>
-              <Input
-                type="number"
-                inputMode="tel"
-                value={fiberGoal}
-                onChange={(e) =>
-                  updateGoalsDraft({
-                    fiberGoal: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
+          <div className="space-y-1">
+            <Label>Eiweiß (g)</Label>
+            <Input
+              type="number"
+              inputMode="tel"
+              value={proteinGoal}
+              onChange={(e) =>
+                updateGoalsDraft({
+                  proteinGoal: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
           </div>
-        </div>
-
-        <div className="p-4 pt-2">
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={handleBack}>
-              Abbrechen
-            </Button>
-            <Button className="flex-1 gap-2" onClick={handleSave}>
-              <Save className="h-4 w-4" />
-              Speichern
-            </Button>
+          <div className="space-y-1">
+            <Label>Zucker (g)</Label>
+            <Input
+              type="number"
+              inputMode="tel"
+              value={sugarGoal}
+              onChange={(e) =>
+                updateGoalsDraft({
+                  sugarGoal: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Salz (g)</Label>
+            <Input
+              type="number"
+              inputMode="tel"
+              value={saltGoal}
+              onChange={(e) =>
+                updateGoalsDraft({
+                  saltGoal: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Ballaststoffe (g)</Label>
+            <Input
+              type="number"
+              inputMode="tel"
+              value={fiberGoal}
+              onChange={(e) =>
+                updateGoalsDraft({
+                  fiberGoal: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
           </div>
         </div>
       </div>
-    </div>
+      <div className="flex p-10 pt-6 pb-6 shrink-0">
+        <Button className="flex-1 gap-2" onClick={handleSave}>
+          <Save className="h-4 w-4" />
+          Speichern
+        </Button>
+      </div>
+    </>
   );
 }

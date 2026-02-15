@@ -186,151 +186,134 @@ export function IngredientDrawerContent() {
 
   return (
     <>
-      <div className="h-full w-full bg-background flex flex-col">
-        <div className="mx-auto w-full max-w-md flex flex-col h-full bg-background overflow-hidden">
-          <div className="shrink-0 p-4 border-b">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Zurück</span>
-              </Button>
-              <h2 className="text-foreground font-semibold">
-                {mode === "create" ? "Zutat hinzufügen" : "Zutat bearbeiten"}
-              </h2>
+      <div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={handleBack}>
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Zurück</span>
+          </Button>
+          <h2 className="text-foreground font-semibold">
+            {mode === "create" ? "Zutat hinzufügen" : "Zutat bearbeiten"}
+          </h2>
+        </div>
+      </div>
+
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto gap-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="barcode">Barcode</Label>
+          <div className="flex gap-2">
+            <Input
+              id="barcode"
+              inputMode="numeric"
+              placeholder="Scan oder manuell"
+              value={barcode}
+              onChange={(e) =>
+                updateIngredientDraft({ barcode: e.target.value })
+              }
+              onBlur={onManualBarcodeBlur}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0"
+              disabled={!isOnline}
+              onClick={() => setIsScanning(true)}>
+              {isLoading ? (
+                <RotateCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Scan className="h-4 w-4" />
+              )}
+              <span className="sr-only">Scan</span>
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            placeholder="z.B. Haferflocken"
+            value={name}
+            onChange={(e) => updateIngredientDraft({ name: e.target.value })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label>Einheit</Label>
+          <div className="flex rounded-md shadow-sm border p-1 bg-muted/20 w-full">
+            <button
+              type="button"
+              className={cn(
+                "px-4 py-1.5 text-sm font-medium rounded-sm transition-all, flex-1",
+                unit === "g"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => updateIngredientDraft({ unit: "g" })}>
+              Gramm (g)
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "px-4 py-1.5 text-sm font-medium rounded-sm transition-all, flex-1",
+                unit === "ml"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => updateIngredientDraft({ unit: "ml" })}>
+              Milliliter (ml)
+            </button>
+          </div>
+        </div>
+
+        <NutritionInputFields
+          values={{ calories, fat, carbs, sugar, protein, salt, fiber }}
+          onChange={(key, val) => updateIngredientDraft({ [key]: val })}
+          className="mt-6"
+        />
+
+        {/* Serving Size */}
+
+        <div className="flex flex-col gap-1 mt-auto">
+          <Label htmlFor="serving">Standardportion</Label>
+          <div className="relative w-1/2">
+            <Input
+              id="serving"
+              type="number"
+              inputMode="tel"
+              value={defaultServing || ""}
+              onChange={(e) =>
+                updateIngredientDraft({
+                  defaultServing: parseFloat(e.target.value) || 0,
+                })
+              }
+              className="pr-10"
+            />
+            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+              <span className="text-muted-foreground text-xs font-medium">
+                {unit}
+              </span>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="p-4 overflow-y-auto flex-1 space-y-6">
-            {/* Barcode Section */}
-            <div className="space-y-2">
-              <Label htmlFor="barcode">Barcode</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="barcode"
-                  inputMode="numeric"
-                  placeholder="Scan oder manuell"
-                  value={barcode}
-                  onChange={(e) =>
-                    updateIngredientDraft({ barcode: e.target.value })
-                  }
-                  onBlur={onManualBarcodeBlur}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0"
-                  disabled={!isOnline}
-                  onClick={() => setIsScanning(true)}>
-                  {isLoading ? (
-                    <RotateCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Scan className="h-4 w-4" />
-                  )}
-                  <span className="sr-only">Scan</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Basic Info */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  placeholder="z.B. Haferflocken"
-                  value={name}
-                  onChange={(e) =>
-                    updateIngredientDraft({ name: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Einheit</Label>
-                <div className="flex rounded-md shadow-sm border p-1 bg-muted/20 w-max">
-                  <button
-                    type="button"
-                    className={cn(
-                      "px-4 py-1.5 text-sm font-medium rounded-sm transition-all",
-                      unit === "g"
-                        ? "bg-background shadow-sm text-foreground"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                    onClick={() => updateIngredientDraft({ unit: "g" })}>
-                    Gramm (g)
-                  </button>
-                  <button
-                    type="button"
-                    className={cn(
-                      "px-4 py-1.5 text-sm font-medium rounded-sm transition-all",
-                      unit === "ml"
-                        ? "bg-background shadow-sm text-foreground"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                    onClick={() => updateIngredientDraft({ unit: "ml" })}>
-                    Milliliter (ml)
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Nutrition */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-sm text-muted-foreground">
-                Nährwerte pro 100{unit}
-              </h4>
-              <NutritionInputFields
-                values={{ calories, fat, carbs, sugar, protein, salt, fiber }}
-                onChange={(key, val) => updateIngredientDraft({ [key]: val })}
-              />
-            </div>
-
-            {/* Serving Size */}
-            <div className="space-y-2 pt-2 mb-6 border-t">
-              <Label htmlFor="serving">Standardportion</Label>
-              <div className="relative w-1/2">
-                <Input
-                  id="serving"
-                  type="number"
-                  inputMode="tel"
-                  value={defaultServing || ""}
-                  onChange={(e) =>
-                    updateIngredientDraft({
-                      defaultServing: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="pr-10"
-                />
-                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                  <span className="text-muted-foreground text-xs font-medium">
-                    {unit}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="p-10 pt-6 pb-6">
-            <div className="flex gap-2">
-              {mode === "edit" && ingredientDraft.editId ? (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="shrink-0"
-                  onClick={() => setConfirmDeleteOpen(true)}>
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Zutat löschen</span>
-                </Button>
-              ) : null}
-              <Button
-                className="flex-1"
-                onClick={onSave}
-                disabled={!name.trim()}>
-                Speichern
-              </Button>
-            </div>
-          </div>
+      {/* Footer */}
+      <div className="p-10 pt-6 pb-6">
+        <div className="flex gap-2">
+          {mode === "edit" && ingredientDraft.editId ? (
+            <Button
+              variant="destructive"
+              size="icon"
+              className="shrink-0"
+              onClick={() => setConfirmDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Zutat löschen</span>
+            </Button>
+          ) : null}
+          <Button className="flex-1" onClick={onSave} disabled={!name.trim()}>
+            Speichern
+          </Button>
         </div>
       </div>
 
