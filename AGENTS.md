@@ -14,7 +14,7 @@
 | PWA          | `vite-plugin-pwa` (`registerType: "autoUpdate"`) |
 | Routing      | `react-router-dom` v7, HashRouter                |
 | State        | Local `useState` + `useSearchParams` (no store)  |
-| Database     | Dexie 4 (IndexedDB), v3 schema                   |
+| Database     | Dexie 4 (IndexedDB), v1 schema (fresh, no migrations) |
 | Styling      | Tailwind CSS 4 + shadcn/ui + `tw-animate-css`    |
 | Icons        | Lucide React                                     |
 | Dates        | date-fns (German locale)                         |
@@ -112,18 +112,19 @@ src/
 > **No name** — display name is derived from the referenced ingredient.
 > **No sourceRecipe\*** — recipes are used only to instantiate items; no persistent link.
 
-**`dailyGoals`** — Single row with default nutrition targets.
-| Field | Type |
-| --------------- | ------ |
-| calories | number |
-| fat | number |
-| carbs | number |
-| protein | number |
-| sugar | number |
-| salt | number |
-| fiber | number |
+**`dailyGoals`** — Single row with global nutrition targets.
+| Field      | Type   | Notes                         |
+| ---------- | ------ | ----------------------------- |
+| calories   | number | kcal target                   |
+| fatPct     | number | % of calories from fat        |
+| carbsPct   | number | % of calories from carbs      |
+| proteinPct | number | % of calories from protein    |
+| sugar      | number | grams                         |
+| salt       | number | grams                         |
+| fiber      | number | grams                         |
 
-**`dailyGoalOverrides`** — Per-date overrides (unique on `date`).
+> Gram values for fat/carbs/protein are computed at display time:
+> `grams = calories × pct / 100 / caloriesPerGram` (fat=9, carbs=4, protein=4).
 
 ### Indices (Dexie)
 
@@ -134,7 +135,6 @@ recipeIngredients: ++id, recipeId, ingredientId
 meals:             ++id, date, createdAt
 mealIngredients:   ++id, mealId, ingredientId
 dailyGoals:        ++id
-dailyGoalOverrides: ++id, &date
 ```
 
 ### Conceptual Relationships
@@ -152,10 +152,9 @@ Ingredient  ←─┐
 - When an **ingredient is updated**, all referencing `mealIngredients` are updated with new unit/nutrition (`IngredientsPage.onSave`).
 - When an **ingredient is deleted**, its `mealIngredients` and `recipeIngredients` are cascade-deleted.
 
-### DB Migrations
+### DB Schema
 
-- **v1 → v2**: Populates per-100 nutrition snapshots on old `mealItems` from linked ingredients.
-- **v2 → v3**: Renames `mealItems` → `mealIngredients`, drops items without `ingredientId`, renames nutrition fields (e.g. `caloriesPer100` → `calories`), renames DailyGoals fields (e.g. `caloriesGoal` → `calories`).
+Fresh v1 schema — no migrations. The database is initialized with a single version containing all current tables. Old databases should be deleted and recreated.
 
 ---
 
@@ -173,8 +172,7 @@ Editor pages read mode/context from `useSearchParams()`:
 - `/recipe` — create new recipe
 - `/ingredient?id=X` — edit existing ingredient
 - `/ingredient` — create new ingredient
-- `/goals` — edit default goals
-- `/goals?date=YYYY-MM-DD` — edit date-specific goal override
+- `/goals` — edit global nutrition goals
 
 ### Dexie Live Query Hooks (`useMeals.ts`)
 
@@ -183,7 +181,7 @@ Editor pages read mode/context from `useSearchParams()`:
 | `useMealsByDate` | `MealWithNutrition[]` | LogsPage                                 |
 | `useIngredients` | `Ingredient[]`        | IngredientSearch, RecipesIngredientsPage |
 | `useRecipes`     | `Recipe[]`            | MealsPage, RecipesIngredientsPage        |
-| `useDailyGoals`  | `NutritionValues`     | LogsPage                                 |
+| `useDailyGoals`  | `DailyGoals \| undefined` | LogsPage                                 |
 
 `MealWithNutrition` includes `items: MealIngredientWithName[]` where ingredient names are resolved via DB join.
 
@@ -236,8 +234,9 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 
 ### Goals
 
-- Single set of default goals (seeded on first run: 2700 kcal).
-- Optional per-date overrides.
+- Single set of global goals (seeded on first run: 2700 kcal, 30% fat, 45% carbs, 25% protein).
+- No per-date overrides — one target applies to all days.
+- Fat, carbs, protein stored as percentages; gram values computed via `goalsToNutritionValues()`.
 - `NutritionSummary` shows consumed/goal; tapping navigates to goals editor.
 
 ---
@@ -264,8 +263,7 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 - [x] Add recipes to meals (adds ingredients for 1 serving)
 - [x] Nutrition summary per day (kcal, fat, carbs, protein)
 - [x] Extended macros: sugar, salt, fiber
-- [x] Daily nutrition goals with defaults
-- [x] Per-date goal overrides
+- [x] Daily nutrition goals (global, percentage-based macros)
 - [x] Recipe CRUD (name, servings, ingredients with amounts)
 - [x] Ingredient CRUD (name, unit, per-100 nutrition, barcode)
 - [x] Barcode scanning (camera) with OpenFoodFacts lookup
@@ -277,7 +275,7 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 - [x] Every MealIngredient must reference an ingredient (ingredientId required)
 - [x] Ingredient update propagates to all referencing mealIngredients
 - [x] Ingredient delete cascades to mealIngredients and recipeIngredients
-- [x] DB migration v1→v2→v3 (schema evolution)
+- [x] DB v1 fresh schema (no migrations)
 
 ### UX
 

@@ -5,6 +5,7 @@ import type {
   MealIngredient,
   Ingredient,
   NutritionValues,
+  DailyGoals,
 } from "@/types";
 
 function calcNutrition(items: MealIngredient[]): NutritionValues {
@@ -109,51 +110,26 @@ export function useRecipes(search?: string) {
 }
 
 /**
- * Live query for daily goals (returns defaults merged with any override for date).
+ * Live query for daily goals (single global target, no per-date overrides).
  */
-export function useDailyGoals(date: string) {
+export function useDailyGoals() {
   return useLiveQuery(async () => {
-    const override = await db.dailyGoalOverrides
-      .where("date")
-      .equals(date)
-      .first();
+    return db.dailyGoals.orderBy("id").first();
+  });
+}
 
-    const defaults = await db.dailyGoals.orderBy("id").first();
-
-    const fallback: NutritionValues = {
-      calories: 2000,
-      fat: 70,
-      carbs: 260,
-      protein: 50,
-      sugar: 90,
-      salt: 6,
-      fiber: 30,
-    };
-
-    const base: NutritionValues = defaults
-      ? {
-          calories: defaults.calories,
-          fat: defaults.fat,
-          carbs: defaults.carbs,
-          protein: defaults.protein,
-          sugar: defaults.sugar,
-          salt: defaults.salt,
-          fiber: defaults.fiber,
-        }
-      : fallback;
-
-    if (override) {
-      return {
-        calories: override.calories ?? base.calories,
-        fat: override.fat ?? base.fat,
-        carbs: override.carbs ?? base.carbs,
-        protein: override.protein ?? base.protein,
-        sugar: override.sugar ?? base.sugar,
-        salt: override.salt ?? base.salt,
-        fiber: override.fiber ?? base.fiber,
-      };
-    }
-
-    return base;
-  }, [date]);
+/**
+ * Convert percentage-based DailyGoals to gram-based NutritionValues.
+ * Fat = 9 kcal/g, Carbs = 4 kcal/g, Protein = 4 kcal/g.
+ */
+export function goalsToNutritionValues(goals: DailyGoals): NutritionValues {
+  return {
+    calories: goals.calories,
+    fat: (goals.calories * goals.fatPct) / 100 / 9,
+    carbs: (goals.calories * goals.carbsPct) / 100 / 4,
+    protein: (goals.calories * goals.proteinPct) / 100 / 4,
+    sugar: goals.sugar,
+    salt: goals.salt,
+    fiber: goals.fiber,
+  };
 }

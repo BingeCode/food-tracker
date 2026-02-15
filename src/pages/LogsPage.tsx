@@ -1,6 +1,10 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { useMealsByDate, useDailyGoals } from "@/hooks/useMeals";
+import {
+  useMealsByDate,
+  useDailyGoals,
+  goalsToNutritionValues,
+} from "@/hooks/useMeals";
 import { DateNavigator } from "@/components/DateNavigator";
 import { NutritionSummary } from "@/components/NutritionSummary";
 import { Button } from "@/components/ui/button";
@@ -11,7 +15,7 @@ import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 export function LogsPage() {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const meals = useMealsByDate(date);
-  const goals = useDailyGoals(date);
+  const rawGoals = useDailyGoals();
   const { navigateTo } = useViewTransitionNavigate();
 
   const fallbackGoals: NutritionValues = {
@@ -23,6 +27,8 @@ export function LogsPage() {
     salt: 6,
     fiber: 30,
   };
+
+  const goals = rawGoals ? goalsToNutritionValues(rawGoals) : fallbackGoals;
 
   const totals = useMemo(() => {
     if (!meals)
@@ -68,8 +74,7 @@ export function LogsPage() {
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
           <NutritionSummary
             current={totals}
-            goals={goals ?? fallbackGoals}
-            date={date}
+            goals={goals}
           />
         </div>
       </div>
