@@ -259,10 +259,7 @@ export function GoalsDrawerContent() {
 
         <div className="p-4 pt-2">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={handleBack}>
+            <Button variant="outline" className="flex-1" onClick={handleBack}>
               Abbrechen
             </Button>
             <Button className="flex-1 gap-2" onClick={handleSave}>
