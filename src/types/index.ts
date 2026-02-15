@@ -1,7 +1,7 @@
 // ── Ingredient ──────────────────────────────────────────────
 
 export interface Ingredient {
-  id?: number;
+  id: number;
   barcode?: string;
   name: string;
   unit: "g" | "ml";
@@ -20,7 +20,7 @@ export interface Ingredient {
 // ── Recipe ──────────────────────────────────────────────────
 
 export interface Recipe {
-  id?: number;
+  id: number;
   name: string;
   servings: number;
   createdAt: Date;
@@ -28,7 +28,7 @@ export interface Recipe {
 }
 
 export interface RecipeIngredient {
-  id?: number;
+  id: number;
   recipeId: number;
   ingredientId: number;
   amount: number; // in g/ml (depends on ingredient unit)
@@ -37,7 +37,7 @@ export interface RecipeIngredient {
 // ── Meal ────────────────────────────────────────────────────
 
 export interface Meal {
-  id?: number;
+  id: number;
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   name: string;
@@ -45,50 +45,45 @@ export interface Meal {
   updatedAt: Date;
 }
 
-export interface MealItem {
-  id?: number;
+export interface MealIngredient {
+  id: number;
   mealId: number;
-  ingredientId?: number;
-  name: string;
+  ingredientId: number;
   amount: number;
   unit: "g" | "ml";
-  sourceRecipeName?: string;
-  sourceRecipeBaseAmount?: number;
-  sourceRecipePortions?: number;
-  sourceRecipeTotalServings?: number;
   // Nutrition per 100g/100ml (snapshot at save time)
-  caloriesPer100: number;
-  fatPer100: number;
-  carbsPer100: number;
-  sugarPer100: number;
-  proteinPer100: number;
-  saltPer100: number;
-  fiberPer100: number;
+  calories: number;
+  fat: number;
+  carbs: number;
+  sugar: number;
+  protein: number;
+  salt: number;
+  fiber: number;
 }
 
 // ── Goals ───────────────────────────────────────────────────
 
 export interface DailyGoals {
-  id?: number;
-  caloriesGoal: number;
-  fatGoal: number; // in g
-  carbsGoal: number; // in g
-  proteinGoal: number; // in g
-  sugarGoal?: number;
-  saltGoal?: number;
-  fiberGoal?: number;
+  id: number;
+  calories: number;
+  fat: number;
+  carbs: number;
+  protein: number;
+  sugar: number;
+  salt: number;
+  fiber: number;
 }
 
 export interface DailyGoalOverride {
-  id?: number;
+  id: number;
   date: string; // YYYY-MM-DD (unique)
-  caloriesGoal?: number;
-  fatGoal?: number;
-  carbsGoal?: number;
-  proteinGoal?: number;
-  sugarGoal?: number;
-  saltGoal?: number;
-  fiberGoal?: number;
+  calories?: number;
+  fat?: number;
+  carbs?: number;
+  protein?: number;
+  sugar?: number;
+  salt?: number;
+  fiber?: number;
 }
 
 // ── Nutrition values (computed) ─────────────────────────────
@@ -101,80 +96,6 @@ export interface NutritionValues {
   protein: number;
   salt: number;
   fiber: number;
-}
-
-// ── Draft types for Zustand store ───────────────────────────
-
-export interface MealItemDraft {
-  ingredientId?: number;
-  name: string;
-  amount: number;
-  unit: "g" | "ml";
-  sourceRecipeName?: string;
-  sourceRecipeBaseAmount?: number;
-  sourceRecipePortions?: number;
-  sourceRecipeTotalServings?: number;
-
-  // Nutrition values per 100 units (snapshot from ingredient or manual input)
-  caloriesPer100: number;
-  fatPer100: number;
-  carbsPer100: number;
-  sugarPer100: number;
-  proteinPer100: number;
-  saltPer100: number;
-  fiberPer100: number;
-}
-
-export interface MealDraft {
-  open: boolean;
-  mode: "create" | "edit";
-  editId?: number;
-  date: string; // YYYY-MM-DD
-  time: string;
-  items: MealItemDraft[];
-}
-
-export interface RecipeDraft {
-  open: boolean;
-  mode: "create" | "edit";
-  editId?: number;
-  name: string;
-  items: MealItemDraft[];
-  servings: number;
-}
-
-export interface IngredientDraft {
-  open: boolean;
-  mode: "create" | "edit";
-  editId?: number;
-  barcode: string;
-  name: string;
-  unit: "g" | "ml";
-  calories: number;
-  fat: number;
-  carbs: number;
-  sugar: number;
-  protein: number;
-  salt: number;
-  fiber: number;
-  defaultServing: number;
-}
-
-export interface GoalsDraft {
-  open: boolean;
-  caloriesGoal: number;
-  fatGoal: number;
-  carbsGoal: number;
-  proteinGoal: number;
-  sugarGoal: number;
-  saltGoal: number;
-  fiberGoal: number;
-  // Per-day override
-  overrideDate?: string;
-  overrideCalories?: number;
-  overrideFat?: number;
-  overrideCarbs?: number;
-  overrideProtein?: number;
 }
 
 // ── Open Food Facts API ─────────────────────────────────────

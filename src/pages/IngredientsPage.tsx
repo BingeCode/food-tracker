@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDraftStore } from "@/stores/draft-store";
 import { db } from "@/lib/db";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { NutritionInputFields } from "@/components/NutritionInputFields";
 import { fetchProductByBarcode } from "@/lib/openfoodfacts";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Scan, RotateCw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
@@ -16,63 +16,73 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader as ConfirmDialogHeader,
-  DialogTitle as ConfirmDialogTitle,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 
 export function IngredientsPage() {
-  const {
-    ingredientDraft,
-    closeIngredient,
-    updateIngredientDraft,
-    clearIngredientDraft,
-  } = useDraftStore();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("id")
+    ? Number(searchParams.get("id"))
+    : undefined;
+  const mode = editId ? "edit" : "create";
+
+  const [barcode, setBarcode] = useState("");
+  const [name, setName] = useState("");
+  const [unit, setUnit] = useState<"g" | "ml">("g");
+  const [calories, setCalories] = useState(0);
+  const [fat, setFat] = useState(0);
+  const [carbs, setCarbs] = useState(0);
+  const [sugar, setSugar] = useState(0);
+  const [protein, setProtein] = useState(0);
+  const [salt, setSalt] = useState(0);
+  const [fiber, setFiber] = useState(0);
+  const [defaultServing, setDefaultServing] = useState(100);
+
   const isOnline = useOnlineStatus();
   const { navigateBack } = useViewTransitionNavigate();
   const [isScanning, setIsScanning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-  const {
-    open,
-    mode,
-    barcode,
-    name,
-    unit,
-    calories,
-    fat,
-    carbs,
-    sugar,
-    protein,
-    salt,
-    fiber,
-    defaultServing,
-  } = ingredientDraft;
-
+  // Load ingredient data if editing
   useEffect(() => {
-    if (open && mode === "edit" && ingredientDraft.editId) {
-      db.ingredients.get(ingredientDraft.editId).then((ingredient) => {
+    if (mode === "edit" && editId) {
+      db.ingredients.get(editId).then((ingredient) => {
         if (!ingredient) return;
-        updateIngredientDraft({
-          barcode: ingredient.barcode ?? "",
-          name: ingredient.name,
-          unit: ingredient.unit,
-          calories: ingredient.calories,
-          fat: ingredient.fat,
-          carbs: ingredient.carbs,
-          sugar: ingredient.sugar,
-          protein: ingredient.protein,
-          salt: ingredient.salt,
-          fiber: ingredient.fiber,
-          defaultServing: ingredient.defaultServing,
-        });
+        setBarcode(ingredient.barcode ?? "");
+        setName(ingredient.name);
+        setUnit(ingredient.unit);
+        setCalories(ingredient.calories);
+        setFat(ingredient.fat);
+        setCarbs(ingredient.carbs);
+        setSugar(ingredient.sugar);
+        setProtein(ingredient.protein);
+        setSalt(ingredient.salt);
+        setFiber(ingredient.fiber);
+        setDefaultServing(ingredient.defaultServing);
       });
     }
-  }, [open, mode, ingredientDraft.editId, updateIngredientDraft]);
+  }, [mode, editId]);
+
+  const nutritionValues = { calories, fat, carbs, sugar, protein, salt, fiber };
+
+  const setNutritionField = (field: string, value: number) => {
+    const setters: Record<string, (v: number) => void> = {
+      calories: setCalories,
+      fat: setFat,
+      carbs: setCarbs,
+      sugar: setSugar,
+      protein: setProtein,
+      salt: setSalt,
+      fiber: setFiber,
+    };
+    setters[field]?.(value);
+  };
 
   const handleScan = async (code: string) => {
     setIsScanning(false);
-    updateIngredientDraft({ barcode: code });
+    setBarcode(code);
     await loadApiData(code);
   };
 
@@ -82,17 +92,15 @@ export function IngredientsPage() {
     try {
       const result = await fetchProductByBarcode(code);
       if (result.found) {
-        updateIngredientDraft({
-          name: result.name || name,
-          unit: result.unit,
-          calories: result.calories,
-          fat: result.fat,
-          carbs: result.carbs,
-          sugar: result.sugar,
-          protein: result.protein,
-          salt: result.salt,
-          fiber: result.fiber,
-        });
+        setName(result.name || name);
+        setUnit(result.unit);
+        setCalories(result.calories);
+        setFat(result.fat);
+        setCarbs(result.carbs);
+        setSugar(result.sugar);
+        setProtein(result.protein);
+        setSalt(result.salt);
+        setFiber(result.fiber);
       }
     } catch (error) {
       console.error("API error", error);
@@ -112,7 +120,7 @@ export function IngredientsPage() {
 
     if (mode === "create") {
       await db.ingredients.add({
-        barcode,
+        barcode: barcode || undefined,
         name,
         unit,
         calories,
@@ -126,10 +134,9 @@ export function IngredientsPage() {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-    } else if (mode === "edit" && ingredientDraft.editId) {
-      const ingredientId = ingredientDraft.editId;
-      await db.ingredients.update(ingredientId, {
-        barcode,
+    } else if (mode === "edit" && editId) {
+      await db.ingredients.update(editId, {
+        barcode: barcode || undefined,
         name,
         unit,
         calories,
@@ -143,77 +150,62 @@ export function IngredientsPage() {
         updatedAt: new Date(),
       });
 
-      // Propagate name/nutrition changes to all referencing meal items
-      const referencingItems = await db.mealItems
+      // Propagate nutrition changes to all referencing meal ingredients
+      const refs = await db.mealIngredients
         .where("ingredientId")
-        .equals(ingredientId)
+        .equals(editId)
         .toArray();
 
-      if (referencingItems.length > 0) {
+      if (refs.length > 0) {
         await Promise.all(
-          referencingItems.map((item) =>
-            db.mealItems.update(item.id!, {
-              name,
+          refs.map((item) =>
+            db.mealIngredients.update(item.id, {
               unit,
-              caloriesPer100: calories,
-              fatPer100: fat,
-              carbsPer100: carbs,
-              sugarPer100: sugar,
-              proteinPer100: protein,
-              saltPer100: salt,
-              fiberPer100: fiber,
+              calories,
+              fat,
+              carbs,
+              sugar,
+              protein,
+              salt,
+              fiber,
             }),
           ),
         );
       }
     }
 
-    clearIngredientDraft();
-    closeIngredient();
     navigateBack();
   };
 
   const onDelete = async () => {
-    if (mode !== "edit" || !ingredientDraft.editId) return;
+    if (mode !== "edit" || !editId) return;
 
     try {
-      const ingredientId = ingredientDraft.editId;
       const recipeItems = await db.recipeIngredients
         .where("ingredientId")
-        .equals(ingredientId)
+        .equals(editId)
         .toArray();
-      const mealItems = await db.mealItems
+      const mealItems = await db.mealIngredients
         .where("ingredientId")
-        .equals(ingredientId)
+        .equals(editId)
         .toArray();
 
-      await db.recipeIngredients.bulkDelete(
-        recipeItems.map((item) => item.id!).filter(Boolean),
-      );
-      await db.mealItems.bulkDelete(
-        mealItems.map((item) => item.id!).filter(Boolean),
-      );
-      await db.ingredients.delete(ingredientId);
+      await db.recipeIngredients.bulkDelete(recipeItems.map((item) => item.id));
+      await db.mealIngredients.bulkDelete(mealItems.map((item) => item.id));
+      await db.ingredients.delete(editId);
 
       setConfirmDeleteOpen(false);
-      clearIngredientDraft();
-      closeIngredient();
       navigateBack();
     } catch (error) {
       console.error("Failed to delete ingredient", error);
     }
   };
 
-  const handleBack = () => {
-    closeIngredient();
-    navigateBack();
-  };
-
   return (
     <>
       <div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handleBack}>
+          <Button variant="ghost" size="icon" onClick={navigateBack}>
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Zurück</span>
           </Button>
@@ -232,9 +224,7 @@ export function IngredientsPage() {
               inputMode="numeric"
               placeholder="Scan oder manuell"
               value={barcode}
-              onChange={(e) =>
-                updateIngredientDraft({ barcode: e.target.value })
-              }
+              onChange={(e) => setBarcode(e.target.value)}
               onBlur={onManualBarcodeBlur}
             />
             <Button
@@ -259,7 +249,7 @@ export function IngredientsPage() {
             id="name"
             placeholder="z.B. Haferflocken"
             value={name}
-            onChange={(e) => updateIngredientDraft({ name: e.target.value })}
+            onChange={(e) => setName(e.target.value)}
           />
         </div>
 
@@ -274,7 +264,7 @@ export function IngredientsPage() {
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
-              onClick={() => updateIngredientDraft({ unit: "g" })}>
+              onClick={() => setUnit("g")}>
               Gramm (g)
             </button>
             <button
@@ -285,20 +275,19 @@ export function IngredientsPage() {
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
-              onClick={() => updateIngredientDraft({ unit: "ml" })}>
+              onClick={() => setUnit("ml")}>
               Milliliter (ml)
             </button>
           </div>
         </div>
 
         <NutritionInputFields
-          values={{ calories, fat, carbs, sugar, protein, salt, fiber }}
-          onChange={(key, val) => updateIngredientDraft({ [key]: val })}
+          values={nutritionValues}
+          onChange={setNutritionField}
           className="mt-6"
         />
 
         {/* Serving Size */}
-
         <div className="flex flex-col gap-1 mt-auto">
           <Label htmlFor="serving">Standardportion</Label>
           <div className="relative w-1/2">
@@ -308,9 +297,7 @@ export function IngredientsPage() {
               inputMode="tel"
               value={defaultServing || ""}
               onChange={(e) =>
-                updateIngredientDraft({
-                  defaultServing: parseFloat(e.target.value) || 0,
-                })
+                setDefaultServing(parseFloat(e.target.value) || 0)
               }
               className="pr-10"
             />
@@ -326,7 +313,7 @@ export function IngredientsPage() {
       {/* Footer */}
       <div className="p-10 pt-6 pb-6">
         <div className="flex gap-2">
-          {mode === "edit" && ingredientDraft.editId ? (
+          {mode === "edit" && editId ? (
             <Button
               variant="destructive"
               size="icon"
@@ -350,12 +337,12 @@ export function IngredientsPage() {
 
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <DialogContent>
-          <ConfirmDialogHeader>
-            <ConfirmDialogTitle>Zutat löschen?</ConfirmDialogTitle>
+          <DialogHeader>
+            <DialogTitle>Zutat löschen?</DialogTitle>
             <DialogDescription>
               Diese Aktion kann nicht rückgängig gemacht werden.
             </DialogDescription>
-          </ConfirmDialogHeader>
+          </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"

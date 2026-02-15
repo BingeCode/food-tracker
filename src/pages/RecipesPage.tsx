@@ -1,17 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDraftStore } from "@/stores/draft-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus, Scan, Save, Trash2, X } from "lucide-react";
-import type {
-  MealItemDraft,
-  Ingredient,
-  Recipe,
-  RecipeIngredient,
-} from "@/types";
+import type { Ingredient, RecipeIngredient } from "@/types";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { fetchProductByBarcode } from "@/lib/openfoodfacts";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
@@ -25,78 +20,99 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function RecipesPage() {
-  const {
-    recipeDraft,
-    closeRecipes,
-    updateRecipeDraft,
-    addRecipeItem,
-    removeRecipeItem,
-    updateRecipeItem,
-    clearRecipeDraft,
-  } = useDraftStore();
+interface DraftItem {
+  ingredientId: number;
+  name: string;
+  amount: number;
+  unit: "g" | "ml";
+  defaultServing: number;
+  calories: number;
+  fat: number;
+  carbs: number;
+  sugar: number;
+  protein: number;
+  salt: number;
+  fiber: number;
+}
 
-  const { open, mode, editId, name, items, servings } = recipeDraft;
+export function RecipesPage() {
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("id")
+    ? Number(searchParams.get("id"))
+    : undefined;
+  const mode = editId ? "edit" : "create";
+
+  const [name, setName] = useState("");
+  const [servings, setServings] = useState(1);
+  const [items, setItems] = useState<DraftItem[]>([]);
+
   const isOnline = useOnlineStatus();
   const { navigateBack } = useViewTransitionNavigate();
   const [isScanning, setIsScanning] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  // Load recipe data if editing
   useEffect(() => {
-    if (open && mode === "edit" && editId) {
+    if (mode === "edit" && editId) {
       db.recipes.get(editId).then(async (recipe) => {
-        if (recipe) {
-          const dbItems = await db.recipeIngredients
-            .where("recipeId")
-            .equals(recipe.id!)
-            .toArray();
+        if (!recipe) return;
+        const dbItems = await db.recipeIngredients
+          .where("recipeId")
+          .equals(recipe.id)
+          .toArray();
 
-          const draftItems: MealItemDraft[] = [];
-
-          for (const item of dbItems) {
-            const ing = await db.ingredients.get(item.ingredientId);
-            if (ing) {
-              draftItems.push({
-                ingredientId: ing.id,
-                name: ing.name,
-                amount: item.amount,
-                unit: ing.unit,
-                caloriesPer100: ing.calories,
-                fatPer100: ing.fat,
-                carbsPer100: ing.carbs,
-                sugarPer100: ing.sugar,
-                proteinPer100: ing.protein,
-                saltPer100: ing.salt,
-                fiberPer100: ing.fiber,
-              });
-            }
+        const draftItems: DraftItem[] = [];
+        for (const item of dbItems) {
+          const ing = await db.ingredients.get(item.ingredientId);
+          if (ing) {
+            draftItems.push({
+              ingredientId: ing.id,
+              name: ing.name,
+              amount: item.amount,
+              unit: ing.unit,
+              defaultServing: ing.defaultServing,
+              calories: ing.calories,
+              fat: ing.fat,
+              carbs: ing.carbs,
+              sugar: ing.sugar,
+              protein: ing.protein,
+              salt: ing.salt,
+              fiber: ing.fiber,
+            });
           }
-
-          updateRecipeDraft({
-            name: recipe.name,
-            servings: recipe.servings,
-            items: draftItems,
-          });
         }
+
+        setName(recipe.name);
+        setServings(recipe.servings);
+        setItems(draftItems);
       });
     }
-  }, [open, mode, editId, updateRecipeDraft]);
+  }, [mode, editId]);
+
+  const addItem = (item: DraftItem) =>
+    setItems((prev) => [...prev, item]);
+  const removeItem = (index: number) =>
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  const updateItemAmount = (index: number, amount: number) =>
+    setItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, amount } : item)),
+    );
 
   const handleSelectIngredient = (ing: Ingredient) => {
-    const newItem: MealItemDraft = {
+    addItem({
       ingredientId: ing.id,
       name: ing.name,
       amount: ing.defaultServing || 100,
       unit: ing.unit,
-      caloriesPer100: ing.calories,
-      fatPer100: ing.fat,
-      carbsPer100: ing.carbs,
-      sugarPer100: ing.sugar,
-      proteinPer100: ing.protein,
-      saltPer100: ing.salt,
-      fiberPer100: ing.fiber,
-    };
-    addRecipeItem(newItem);
+      defaultServing: ing.defaultServing,
+      calories: ing.calories,
+      fat: ing.fat,
+      carbs: ing.carbs,
+      sugar: ing.sugar,
+      protein: ing.protein,
+      salt: ing.salt,
+      fiber: ing.fiber,
+    });
   };
 
   const handleScan = async (code: string) => {
@@ -110,19 +126,24 @@ export function RecipesPage() {
     if (isOnline) {
       const product = await fetchProductByBarcode(code);
       if (product.found) {
-        const newItem: MealItemDraft = {
+        // Auto-create ingredient in DB
+        const id = await db.ingredients.add({
+          barcode: code,
           name: product.name || "Gescanntes Produkt",
-          amount: 100,
           unit: product.unit,
-          caloriesPer100: product.calories,
-          fatPer100: product.fat,
-          carbsPer100: product.carbs,
-          sugarPer100: product.sugar,
-          proteinPer100: product.protein,
-          saltPer100: product.salt,
-          fiberPer100: product.fiber,
-        };
-        addRecipeItem(newItem);
+          calories: product.calories,
+          fat: product.fat,
+          carbs: product.carbs,
+          sugar: product.sugar,
+          protein: product.protein,
+          salt: product.salt,
+          fiber: product.fiber,
+          defaultServing: 100,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        const newIng = await db.ingredients.get(id);
+        if (newIng) handleSelectIngredient(newIng);
         return;
       }
     }
@@ -130,77 +151,48 @@ export function RecipesPage() {
     alert("Produkt nicht gefunden.");
   };
 
-  const handleSaveRecipe = async () => {
+  const handleSave = async () => {
     if (!name.trim() || items.length === 0) return;
 
     try {
-      const recipeData: Omit<Recipe, "id" | "createdAt"> = {
-        name,
-        servings: servings || 1,
-        updatedAt: new Date(),
-      };
-
-      let currentRecipeId: number | undefined = editId;
+      let currentRecipeId = editId;
 
       if (mode === "edit" && editId) {
-        await db.recipes.update(editId, recipeData);
+        await db.recipes.update(editId, {
+          name,
+          servings: servings || 1,
+          updatedAt: new Date(),
+        });
         const oldItems = await db.recipeIngredients
           .where("recipeId")
           .equals(editId)
           .toArray();
-        await db.recipeIngredients.bulkDelete(
-          oldItems.map((i) => i.id!).filter(Boolean),
-        );
+        await db.recipeIngredients.bulkDelete(oldItems.map((i) => i.id));
       } else {
-        const id = await db.recipes.add({
-          ...recipeData,
+        currentRecipeId = await db.recipes.add({
+          name,
+          servings: servings || 1,
           createdAt: new Date(),
+          updatedAt: new Date(),
         });
-        currentRecipeId = id;
       }
 
-      const itemsToSave: Omit<RecipeIngredient, "id">[] = [];
-      for (const item of items) {
-        let ingredientId = item.ingredientId;
-
-        if (!ingredientId) {
-          const newIngId = await db.ingredients.add({
-            name: item.name,
-            unit: item.unit,
-            calories: item.caloriesPer100,
-            fat: item.fatPer100,
-            carbs: item.carbsPer100,
-            sugar: item.sugarPer100,
-            protein: item.proteinPer100,
-            salt: item.saltPer100,
-            fiber: item.fiberPer100,
-            defaultServing: 100,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-          ingredientId = newIngId;
-        }
-
-        if (!ingredientId) continue;
-
-        itemsToSave.push({
+      const itemsToSave: Omit<RecipeIngredient, "id">[] = items.map(
+        (item) => ({
           recipeId: currentRecipeId!,
-          ingredientId,
+          ingredientId: item.ingredientId,
           amount: item.amount,
-        });
-      }
+        }),
+      );
 
       await db.recipeIngredients.bulkAdd(itemsToSave);
-
-      clearRecipeDraft();
-      closeRecipes();
       navigateBack();
     } catch (error) {
       console.error("Failed to save recipe", error);
     }
   };
 
-  const handleDeleteRecipe = async () => {
+  const handleDelete = async () => {
     if (mode !== "edit" || !editId) return;
 
     try {
@@ -208,23 +200,14 @@ export function RecipesPage() {
         .where("recipeId")
         .equals(editId)
         .toArray();
-      await db.recipeIngredients.bulkDelete(
-        recipeItems.map((item) => item.id!).filter(Boolean),
-      );
+      await db.recipeIngredients.bulkDelete(recipeItems.map((item) => item.id));
       await db.recipes.delete(editId);
 
       setConfirmDeleteOpen(false);
-      clearRecipeDraft();
-      closeRecipes();
       navigateBack();
     } catch (error) {
       console.error("Failed to delete recipe", error);
     }
-  };
-
-  const handleBack = () => {
-    closeRecipes();
-    navigateBack();
   };
 
   const totals = useMemo(() => {
@@ -232,13 +215,13 @@ export function RecipesPage() {
       (acc, item) => {
         const factor = item.amount / 100;
         return {
-          calories: acc.calories + item.caloriesPer100 * factor,
-          fat: acc.fat + item.fatPer100 * factor,
-          carbs: acc.carbs + item.carbsPer100 * factor,
-          sugar: acc.sugar + item.sugarPer100 * factor,
-          protein: acc.protein + item.proteinPer100 * factor,
-          salt: acc.salt + item.saltPer100 * factor,
-          fiber: acc.fiber + item.fiberPer100 * factor,
+          calories: acc.calories + item.calories * factor,
+          fat: acc.fat + item.fat * factor,
+          carbs: acc.carbs + item.carbs * factor,
+          sugar: acc.sugar + item.sugar * factor,
+          protein: acc.protein + item.protein * factor,
+          salt: acc.salt + item.salt * factor,
+          fiber: acc.fiber + item.fiber * factor,
         };
       },
       {
@@ -269,7 +252,7 @@ export function RecipesPage() {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
+        <Button variant="ghost" size="icon" onClick={navigateBack}>
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Zurück</span>
         </Button>
@@ -285,7 +268,7 @@ export function RecipesPage() {
             id="r-name"
             value={name}
             placeholder="Name eingeben..."
-            onChange={(e) => updateRecipeDraft({ name: e.target.value })}
+            onChange={(e) => setName(e.target.value)}
           />
         </div>
         <div className="w-20 space-y-1">
@@ -293,11 +276,7 @@ export function RecipesPage() {
           <select
             id="r-servings"
             value={servings}
-            onChange={(e) =>
-              updateRecipeDraft({
-                servings: parseInt(e.target.value) || 1,
-              })
-            }
+            onChange={(e) => setServings(parseInt(e.target.value) || 1)}
             className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs">
             {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
               <option key={n} value={n}>
@@ -331,7 +310,7 @@ export function RecipesPage() {
             <div className="flex-1 overflow-hidden">
               <div className="font-medium text-sm truncate">{item.name}</div>
               <div className="text-xs text-muted-foreground">
-                {Math.round(item.caloriesPer100)} kcal / 100{item.unit}
+                {Math.round(item.calories)} kcal / 100{item.unit}
               </div>
             </div>
 
@@ -340,20 +319,12 @@ export function RecipesPage() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={async () => {
-                  let step = 100;
-
-                  if (item.ingredientId) {
-                    const ingredient = await db.ingredients.get(
-                      item.ingredientId,
-                    );
-                    step = ingredient?.defaultServing ?? 100;
-                  }
-
-                  updateRecipeItem(index, {
-                    amount: Math.max(0, (item.amount || 0) - step),
-                  });
-                }}>
+                onClick={() =>
+                  updateItemAmount(
+                    index,
+                    Math.max(0, (item.amount || 0) - item.defaultServing),
+                  )
+                }>
                 <span className="text-base leading-none">-</span>
                 <span className="sr-only">Menge verringern</span>
               </Button>
@@ -364,9 +335,7 @@ export function RecipesPage() {
                   inputMode="tel"
                   value={item.amount || ""}
                   onChange={(e) =>
-                    updateRecipeItem(index, {
-                      amount: parseFloat(e.target.value) || 0,
-                    })
+                    updateItemAmount(index, parseFloat(e.target.value) || 0)
                   }
                   className="h-8 pr-8 text-right bg-background"
                 />
@@ -379,20 +348,12 @@ export function RecipesPage() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={async () => {
-                  let step = 100;
-
-                  if (item.ingredientId) {
-                    const ingredient = await db.ingredients.get(
-                      item.ingredientId,
-                    );
-                    step = ingredient?.defaultServing ?? 100;
-                  }
-
-                  updateRecipeItem(index, {
-                    amount: (item.amount || 0) + step,
-                  });
-                }}>
+                onClick={() =>
+                  updateItemAmount(
+                    index,
+                    (item.amount || 0) + item.defaultServing,
+                  )
+                }>
                 <Plus className="h-4 w-4" />
                 <span className="sr-only">Menge erhöhen</span>
               </Button>
@@ -401,7 +362,7 @@ export function RecipesPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                onClick={() => removeRecipeItem(index)}>
+                onClick={() => removeItem(index)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -456,7 +417,7 @@ export function RecipesPage() {
             ) : null}
             <Button
               className="flex-1"
-              onClick={handleSaveRecipe}
+              onClick={handleSave}
               disabled={!name || items.length === 0}>
               <Save className="h-4 w-4" />
               Speichern
@@ -485,7 +446,7 @@ export function RecipesPage() {
               onClick={() => setConfirmDeleteOpen(false)}>
               Abbrechen
             </Button>
-            <Button variant="destructive" onClick={handleDeleteRecipe}>
+            <Button variant="destructive" onClick={handleDelete}>
               Löschen
             </Button>
           </DialogFooter>

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useRecipes, useIngredients } from "@/hooks/useMeals";
-import { useDraftStore } from "@/stores/draft-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,10 +15,6 @@ export function RecipesIngredientsPage() {
     activeTab === "ingredients" ? searchTerm : undefined,
   );
 
-  const {
-    openRecipes: openRecipeDrawer,
-    openIngredients: openIngredientDrawer,
-  } = useDraftStore();
   const { navigateTo } = useViewTransitionNavigate();
 
   return (
@@ -58,14 +53,12 @@ export function RecipesIngredientsPage() {
           </button>
         ) : null}
       </div>
+
       {activeTab === "recipes" && (
         <Button
           variant="outline"
           className="w-full h-auto py-3 justify-start"
-          onClick={() => {
-            openRecipeDrawer("create");
-            navigateTo("/recipe");
-          }}>
+          onClick={() => navigateTo("/recipe")}>
           <Plus className="h-4 w-4" />
           Rezept hinzufügen
         </Button>
@@ -75,10 +68,7 @@ export function RecipesIngredientsPage() {
         <Button
           variant="outline"
           className="w-full h-auto py-3 justify-start"
-          onClick={() => {
-            openIngredientDrawer("create");
-            navigateTo("/ingredient");
-          }}>
+          onClick={() => navigateTo("/ingredient")}>
           <Plus className="h-4 w-4" />
           Zutat hinzufügen
         </Button>
@@ -90,10 +80,7 @@ export function RecipesIngredientsPage() {
             <div
               key={recipe.id}
               className="flex items-center justify-between p-3 rounded-lg border bg-card shadow-sm"
-              onClick={() => {
-                openRecipeDrawer("edit", recipe.id);
-                navigateTo("/recipe");
-              }}>
+              onClick={() => navigateTo(`/recipe?id=${recipe.id}`)}>
               <div>
                 <div className="font-semibold">{recipe.name}</div>
                 <div className="text-sm text-muted-foreground">
@@ -112,10 +99,7 @@ export function RecipesIngredientsPage() {
             <div
               key={ing.id}
               className="flex items-center justify-between p-3 rounded-lg border bg-card shadow-sm"
-              onClick={() => {
-                openIngredientDrawer("edit", ing.id);
-                navigateTo("/ingredient");
-              }}>
+              onClick={() => navigateTo(`/ingredient?id=${ing.id}`)}>
               <div>
                 <div className="font-semibold">{ing.name}</div>
                 <div className="text-sm text-muted-foreground">

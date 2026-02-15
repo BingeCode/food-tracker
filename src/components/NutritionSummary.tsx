@@ -1,29 +1,28 @@
 import { formatCompact } from "@/lib/nutrition";
-import { useDraftStore } from "@/stores/draft-store";
 import type { NutritionValues } from "@/types";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 interface NutritionSummaryProps {
   current: NutritionValues;
-  goals: NutritionValues & { calories: number }; // Goals always have a calories field
+  goals: NutritionValues;
+  date?: string;
 }
 
-export function NutritionSummary({ current, goals }: NutritionSummaryProps) {
-  const openGoals = useDraftStore((state) => state.openGoals);
+export function NutritionSummary({
+  current,
+  goals,
+  date,
+}: NutritionSummaryProps) {
   const { navigateTo } = useViewTransitionNavigate();
 
   return (
     <button
-      onClick={() => {
-        openGoals();
-        navigateTo("/goals");
-      }}
+      onClick={() => navigateTo(date ? `/goals?date=${date}` : "/goals")}
       className="w-full bg-background/95 backdrop-blur z-40 px-4 py-3 sticky top-0 md:static flex flex-wrap items-center justify-between text-sm transition-colors hover:bg-muted/50">
       <div className="font-bold text-base">
         {formatCompact(current.calories, goals.calories)}
         <span className="text-muted-foreground ml-0.5 font-normal">Kcal</span>
       </div>
-
       <div className="flex space-x-3 text-muted-foreground tabular-nums">
         <div>
           <span className="font-medium text-foreground">

@@ -13,8 +13,8 @@
 | Build        | Vite 7 + `@vitejs/plugin-react-swc`              |
 | PWA          | `vite-plugin-pwa` (`registerType: "autoUpdate"`) |
 | Routing      | `react-router-dom` v7, HashRouter                |
-| State        | Zustand 5 (no persist middleware)                |
-| Database     | Dexie 4 (IndexedDB), v2 schema                   |
+| State        | Local `useState` + `useSearchParams` (no store)  |
+| Database     | Dexie 4 (IndexedDB), v3 schema                   |
 | Styling      | Tailwind CSS 4 + shadcn/ui + `tw-animate-css`    |
 | Icons        | Lucide React                                     |
 | Dates        | date-fns (German locale)                         |
@@ -37,22 +37,7 @@ src/
 │   ├── IngredientSearch.tsx
 │   ├── NutritionInputFields.tsx
 │   ├── NutritionSummary.tsx
-│   └── ui
-│       ├── badge.tsx
-│       ├── button.tsx
-│       ├── card.tsx
-│       ├── checkbox.tsx
-│       ├── dialog.tsx
-│       ├── input.tsx
-│       ├── label.tsx
-│       ├── popover.tsx
-│       ├── progress.tsx
-│       ├── select.tsx
-│       ├── separator.tsx
-│       ├── sonner.tsx
-│       ├── switch.tsx
-│       ├── tabs.tsx
-│       └── textarea.tsx
+│   └── ui/
 ├── hooks
 │   ├── useMeals.ts
 │   ├── useOnlineStatus.ts
@@ -71,8 +56,6 @@ src/
 │   ├── MealsPage.tsx
 │   ├── RecipesIngredientsPage.tsx
 │   └── RecipesPage.tsx
-├── stores
-│   └── draft-store.ts
 └── types
     └── index.ts
 ```
@@ -84,53 +67,61 @@ src/
 ### Core Entities (Dexie tables)
 
 **`ingredients`** — Base food items with per-100g/ml nutrition.
-| Field | Type | Notes |
+| Field          | Type           | Notes                        |
 | -------------- | -------------- | ---------------------------- |
-| id | number (auto) | Primary key |
-| barcode? | string | EAN for OpenFoodFacts lookup |
-| name | string | Display name |
-| unit | "g" \| "ml" | |
-| calories…fiber | number | All per 100 units |
-| defaultServing | number | Default amount in g/ml |
-| createdAt | Date | |
-| updatedAt | Date | Used for sort order |
+| id             | number (auto)  | Primary key                  |
+| barcode?       | string         | EAN for OpenFoodFacts lookup |
+| name           | string         | Display name                 |
+| unit           | "g" \| "ml"    |                              |
+| calories…fiber | number         | All per 100 units            |
+| defaultServing | number         | Default amount in g/ml       |
+| createdAt      | Date           |                              |
+| updatedAt      | Date           | Used for sort order          |
 
 **`recipes`** — Named collections of ingredients with portion count.
-| Field | Type |
+| Field    | Type          |
 | -------- | ------------- |
-| id | number (auto) |
-| name | string |
-| servings | number |
+| id       | number (auto) |
+| name     | string        |
+| servings | number        |
 
 **`recipeIngredients`** — Join table: recipe → ingredient + amount.
-| Field | Type |
+| Field        | Type   |
 | ------------ | ------ |
-| recipeId | number |
+| recipeId     | number |
 | ingredientId | number |
-| amount | number |
+| amount       | number |
 
 **`meals`** — Logged meals tied to a date.
-| Field | Type | Notes |
+| Field | Type   | Notes      |
 | ----- | ------ | ---------- |
-| date | string | YYYY-MM-DD |
-| time | string | HH:mm |
-| name | string | |
+| date  | string | YYYY-MM-DD |
+| time  | string | HH:mm      |
+| name  | string |            |
 
-**`mealItems`** — Individual items within a meal. Stores a **nutrition snapshot** (per-100 values at save time) so historical data remains stable.
-| Field | Type | Notes |
-| ------------------------ | -------------- | ------------------------------------ |
-| mealId | number | FK to meals |
-| ingredientId? | number | FK to ingredients (if linked) |
-| name | string | Display name (snapshot) |
-| amount | number | Actual amount in g/ml |
-| unit | "g" \| "ml" | |
-| sourceRecipeName? | string | Which recipe this came from |
-| sourceRecipeBaseAmount? | number | Original recipe amount for this item |
-| sourceRecipePortions? | number | Selected portions |
-| sourceRecipeTotalServings? | number | Recipe's total servings |
-| caloriesPer100…fiberPer100 | number | Nutrition per 100 units (snapshot) |
+**`mealIngredients`** — Individual items within a meal. Every item **must** reference an ingredient. Stores a **nutrition snapshot** (per-100 values at save time) so historical data remains stable.
+| Field           | Type        | Notes                                  |
+| --------------- | ----------- | -------------------------------------- |
+| id              | number      | Primary key                            |
+| mealId          | number      | FK to meals                            |
+| ingredientId    | number      | FK to ingredients (required)           |
+| amount          | number      | Actual amount in g/ml                  |
+| unit            | "g" \| "ml" |                                        |
+| calories…fiber  | number      | Nutrition per 100 units (snapshot)     |
+
+> **No name** — display name is derived from the referenced ingredient.
+> **No sourceRecipe\*** — recipes are used only to instantiate items; no persistent link.
 
 **`dailyGoals`** — Single row with default nutrition targets.
+| Field           | Type   |
+| --------------- | ------ |
+| calories        | number |
+| fat             | number |
+| carbs           | number |
+| protein         | number |
+| sugar           | number |
+| salt            | number |
+| fiber           | number |
 
 **`dailyGoalOverrides`** — Per-date overrides (unique on `date`).
 
@@ -141,7 +132,7 @@ ingredients:       ++id, name, barcode, updatedAt
 recipes:           ++id, name, updatedAt
 recipeIngredients: ++id, recipeId, ingredientId
 meals:             ++id, date, createdAt
-mealItems:         ++id, mealId, ingredientId
+mealIngredients:   ++id, mealId, ingredientId
 dailyGoals:        ++id
 dailyGoalOverrides: ++id, &date
 ```
@@ -152,49 +143,62 @@ dailyGoalOverrides: ++id, &date
 Ingredient  ←─┐
                ├── RecipeIngredient ──→ Recipe
                │
-               └── MealItem ──→ Meal
+               └── MealIngredient ──→ Meal
                    (snapshot of ingredient nutrition at save time)
 ```
 
-- **Recipe** = template (collection of ingredients with amounts and servings).
-- **Meal** = instantiation — items are snapshots, optionally linked back to ingredients.
-- When an **ingredient is updated**, all referencing `mealItems` are updated with new name/unit/nutrition (`IngredientDrawerContent.onSave`).
-- When an **ingredient is deleted**, its `mealItems` and `recipeIngredients` are cascade-deleted.
+- **Recipe** = template (collection of ingredients with amounts and servings). Used only to instantiate a meal's ingredient list; fully decoupled after that.
+- **Meal** = instantiation — items are snapshots, always linked to an ingredient.
+- When an **ingredient is updated**, all referencing `mealIngredients` are updated with new unit/nutrition (`IngredientsPage.onSave`).
+- When an **ingredient is deleted**, its `mealIngredients` and `recipeIngredients` are cascade-deleted.
+
+### DB Migrations
+
+- **v1 → v2**: Populates per-100 nutrition snapshots on old `mealItems` from linked ingredients.
+- **v2 → v3**: Renames `mealItems` → `mealIngredients`, drops items without `ingredientId`, renames nutrition fields (e.g. `caloriesPer100` → `calories`), renames DailyGoals fields (e.g. `caloriesGoal` → `calories`).
 
 ---
 
 ## State Management
 
-### Zustand Store (`drawer-store.ts`)
+No global state store. Each editor page manages its own form state with `useState`. Edit mode and context are passed via URL search params.
 
-Holds four editor drafts: `mealDraft`, `recipeDraft`, `ingredientDraft`, `goalsDraft`.
+### URL-based Navigation
 
-Each has `open`/`close`/`update`/`clear` actions. Meal and recipe drafts also have item-level CRUD (`addMealItem`, `removeMealItem`, `updateMealItem`, etc.).
+Editor pages read mode/context from `useSearchParams()`:
 
-> **Naming note:** Actions still use "Drawer" suffix (`openMealDrawer`, `closeMealDrawer`…). A future rename to drop "Drawer" is planned.
+- `/meal?id=X` — edit existing meal
+- `/meal?date=YYYY-MM-DD` — create meal on specific date
+- `/recipe?id=X` — edit existing recipe
+- `/recipe` — create new recipe
+- `/ingredient?id=X` — edit existing ingredient
+- `/ingredient` — create new ingredient
+- `/goals` — edit default goals
+- `/goals?date=YYYY-MM-DD` — edit date-specific goal override
 
 ### Dexie Live Query Hooks (`useMeals.ts`)
 
-| Hook              | Returns               | Used by                                   |
-| ----------------- | --------------------- | ----------------------------------------- |
-| `useMealsByDate`  | `MealWithNutrition[]` | LogPage                                   |
-| `useDayNutrition` | `NutritionValues`     | (available, not yet used)                 |
-| `useIngredients`  | `Ingredient[]`        | IngredientSearch, RecipesIngredientsPage  |
-| `useRecipes`      | `Recipe[]`            | MealDrawerContent, RecipesIngredientsPage |
-| `useDailyGoals`   | `NutritionValues`     | LogPage                                   |
+| Hook             | Returns                      | Used by                                  |
+| ---------------- | ---------------------------- | ---------------------------------------- |
+| `useMealsByDate` | `MealWithNutrition[]`        | LogsPage                                |
+| `useIngredients` | `Ingredient[]`               | IngredientSearch, RecipesIngredientsPage |
+| `useRecipes`     | `Recipe[]`                   | MealsPage, RecipesIngredientsPage        |
+| `useDailyGoals`  | `NutritionValues`            | LogsPage                                |
+
+`MealWithNutrition` includes `items: MealIngredientWithName[]` where ingredient names are resolved via DB join.
 
 ---
 
 ## Routing
 
-| Path          | Component               | Purpose                     |
-| ------------- | ----------------------- | --------------------------- |
-| `/log`        | LogPage                 | Daily meal log (default)    |
-| `/recipes`    | RecipesIngredientsPage  | Recipe & ingredient library |
-| `/meal`       | MealDrawerContent       | Create/edit meal            |
-| `/recipe`     | RecipeDrawerContent     | Create/edit recipe          |
-| `/ingredient` | IngredientDrawerContent | Create/edit ingredient      |
-| `/goals`      | GoalsDrawerContent      | Edit daily nutrition goals  |
+| Path          | Component              | Purpose                     |
+| ------------- | ---------------------- | --------------------------- |
+| `/log`        | LogsPage               | Daily meal log (default)    |
+| `/recipes`    | RecipesIngredientsPage | Recipe & ingredient library |
+| `/meal`       | MealsPage              | Create/edit meal            |
+| `/recipe`     | RecipesPage            | Create/edit recipe          |
+| `/ingredient` | IngredientsPage        | Create/edit ingredient      |
+| `/goals`      | GoalsPage              | Edit daily nutrition goals  |
 
 Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav and have no bottom padding.
 
@@ -202,38 +206,39 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 
 ## Key Behaviors
 
-### Meal Editor (`MealDrawerContent`)
+### Meal Editor (`MealsPage`)
 
-- **Recipe search**: Dropdown appears on 1+ characters; selecting a recipe populates items with ingredient snapshots.
-- **Portion scaling**: `newAmount = baseAmount × (selectedPortions / totalServings)`. Nutrition is always per-100, so only `amount` changes.
+- **Recipe search**: Dropdown appears on 1+ characters; selecting a recipe adds its ingredients for 1 serving.
 - **Ingredient search**: Inline search to add individual ingredients.
-- **Grouped display**: Items are grouped by `sourceRecipeName` with "Weitere Zutaten" for ungrouped items.
-- **Save**: Meal name auto-generated from recipe names or ingredient names.
+- **Flat list**: All items are displayed in a flat list (no recipe grouping).
+- **Barcode scan**: If ingredient doesn't exist locally, auto-creates from OpenFoodFacts before adding.
+- **Save**: Meal name auto-generated from ingredient names. MealIngredient records store nutrition snapshots.
 
-### Recipe Editor (`RecipeDrawerContent`)
+### Recipe Editor (`RecipesPage`)
 
 - Ingredient search + barcode scanner to add items.
 - Plus/minus buttons step by `ingredient.defaultServing`.
 - Per-serving nutrition preview.
 - Saves `RecipeIngredient` join records.
 
-### Ingredient Editor (`IngredientDrawerContent`)
+### Ingredient Editor (`IngredientsPage`)
 
 - Barcode scan → OpenFoodFacts lookup auto-fills nutrition.
-- On save (edit mode): propagates name/unit/nutrition changes to all referencing `mealItems`.
-- On delete: cascade-deletes related `mealItems` and `recipeIngredients`.
+- On save (edit mode): propagates unit/nutrition changes to all referencing `mealIngredients`.
+- On delete: cascade-deletes related `mealIngredients` and `recipeIngredients`.
 
 ### Nutrition Calculation
 
 - All nutrition stored and calculated as **per 100g/ml**.
-- Actual nutrition = `per100value × (amount / 100)`.
-- `MealItem` stores a snapshot — no runtime DB lookups needed for display.
+- Actual nutrition = `value × (amount / 100)`.
+- `MealIngredient` stores a snapshot — no runtime DB lookups needed for nutrition display.
+- Ingredient names are resolved via DB join in `useMealsByDate`.
 
 ### Goals
 
 - Single set of default goals (seeded on first run: 2700 kcal).
 - Optional per-date overrides.
-- `NutritionSummary` shows consumed/goal bar; tapping opens goals editor.
+- `NutritionSummary` shows consumed/goal; tapping navigates to goals editor.
 
 ---
 
@@ -256,8 +261,7 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 
 - [x] Log meals with date & time
 - [x] Add ingredients to meals (with amount in g/ml)
-- [x] Add recipes to meals (with portion selector)
-- [x] Portion-based scaling for recipe items
+- [x] Add recipes to meals (adds ingredients for 1 serving)
 - [x] Nutrition summary per day (kcal, fat, carbs, protein)
 - [x] Extended macros: sugar, salt, fiber
 - [x] Daily nutrition goals with defaults
@@ -269,10 +273,11 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 
 ### Data Integrity
 
-- [x] Nutrition snapshot on MealItem (per-100 values at save time)
-- [x] Ingredient update propagates to all referencing mealItems
-- [x] Ingredient delete cascades to mealItems and recipeIngredients
-- [x] DB migration v1→v2 (populates MealItem snapshots from ingredients)
+- [x] Nutrition snapshot on MealIngredient (per-100 values at save time)
+- [x] Every MealIngredient must reference an ingredient (ingredientId required)
+- [x] Ingredient update propagates to all referencing mealIngredients
+- [x] Ingredient delete cascades to mealIngredients and recipeIngredients
+- [x] DB migration v1→v2→v3 (schema evolution)
 
 ### UX
 
@@ -281,7 +286,6 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 - [x] Search with inline clear buttons
 - [x] Plus/minus amount controls with defaultServing step
 - [x] Recipe search in meal editor (1+ char trigger)
-- [x] Grouped item display by source recipe
 - [x] Date navigation with prev/next/today
 - [x] Bottom navigation (Tagebuch / Bibliothek)
 - [x] Editor pages hide bottom nav

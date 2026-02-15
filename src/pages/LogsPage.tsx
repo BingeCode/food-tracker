@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { useMealsByDate, useDailyGoals } from "@/hooks/useMeals";
-import { useDraftStore } from "@/stores/draft-store";
 import { DateNavigator } from "@/components/DateNavigator";
 import { NutritionSummary } from "@/components/NutritionSummary";
 import { Button } from "@/components/ui/button";
@@ -13,10 +12,9 @@ export function LogsPage() {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const meals = useMealsByDate(date);
   const goals = useDailyGoals(date);
-  const { openMeals: openMealDrawer } = useDraftStore();
   const { navigateTo } = useViewTransitionNavigate();
 
-  const fallbackGoals: NutritionValues & { calories: number } = {
+  const fallbackGoals: NutritionValues = {
     calories: 2700,
     fat: 90,
     carbs: 304,
@@ -38,17 +36,15 @@ export function LogsPage() {
         fiber: 0,
       };
     return meals.reduce(
-      (acc, meal) => {
-        return {
-          calories: acc.calories + meal.nutrition.calories,
-          fat: acc.fat + meal.nutrition.fat,
-          carbs: acc.carbs + meal.nutrition.carbs,
-          sugar: acc.sugar + meal.nutrition.sugar,
-          protein: acc.protein + meal.nutrition.protein,
-          salt: acc.salt + meal.nutrition.salt,
-          fiber: acc.fiber + meal.nutrition.fiber,
-        };
-      },
+      (acc, meal) => ({
+        calories: acc.calories + meal.nutrition.calories,
+        fat: acc.fat + meal.nutrition.fat,
+        carbs: acc.carbs + meal.nutrition.carbs,
+        sugar: acc.sugar + meal.nutrition.sugar,
+        protein: acc.protein + meal.nutrition.protein,
+        salt: acc.salt + meal.nutrition.salt,
+        fiber: acc.fiber + meal.nutrition.fiber,
+      }),
       {
         calories: 0,
         fat: 0,
@@ -70,7 +66,11 @@ export function LogsPage() {
           </h3>
         </div>
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <NutritionSummary current={totals} goals={goals ?? fallbackGoals} />
+          <NutritionSummary
+            current={totals}
+            goals={goals ?? fallbackGoals}
+            date={date}
+          />
         </div>
       </div>
       <div className="flex-1 min-h-0 flex flex-col">
@@ -83,10 +83,7 @@ export function LogsPage() {
             <div
               key={meal.id}
               className="group rounded-lg border bg-card p-3 shadow-sm hover:shadow-md transition-all active:scale-[0.99]"
-              onClick={() => {
-                openMealDrawer("edit", meal.id);
-                navigateTo("/meal");
-              }}>
+              onClick={() => navigateTo(`/meal?id=${meal.id}`)}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground/80">
@@ -135,10 +132,7 @@ export function LogsPage() {
           <Button
             variant="outline"
             className="w-full h-auto py-3 justify-start"
-            onClick={() => {
-              openMealDrawer("create", undefined, date);
-              navigateTo("/meal");
-            }}>
+            onClick={() => navigateTo(`/meal?date=${date}`)}>
             <Plus className="h-4 w-4" />
             Mahlzeit hinzufügen
           </Button>

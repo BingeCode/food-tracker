@@ -1,152 +1,129 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDraftStore } from "@/stores/draft-store";
 import { db } from "@/lib/db";
-import { useCallback, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 export function GoalsPage() {
-  const {
-    goalsDraft,
-    closeGoals: closeGoalsDrawer,
-    updateGoalsDraft,
-  } = useDraftStore();
+  const [searchParams] = useSearchParams();
+  const overrideDate = searchParams.get("date") || undefined;
   const { navigateBack } = useViewTransitionNavigate();
 
-  const {
-    open,
-    caloriesGoal,
-    fatGoal,
-    carbsGoal,
-    proteinGoal,
-    sugarGoal,
-    saltGoal,
-    fiberGoal,
-    overrideDate,
-  } = goalsDraft;
-
-  const loadGoals = useCallback(async () => {
-    // 1. Load defaults
-    const defaults = await db.dailyGoals.orderBy("id").first();
-
-    // 2. If override date, check for override
-    const current = {
-      caloriesGoal: defaults?.caloriesGoal ?? 2700,
-      fatGoal: defaults?.fatGoal ?? 90,
-      carbsGoal: defaults?.carbsGoal ?? 304,
-      proteinGoal: defaults?.proteinGoal ?? 169,
-      sugarGoal: defaults?.sugarGoal ?? 50,
-      saltGoal: defaults?.saltGoal ?? 6,
-      fiberGoal: defaults?.fiberGoal ?? 30,
-    };
-
-    if (overrideDate) {
-      const override = await db.dailyGoalOverrides
-        .where("date")
-        .equals(overrideDate)
-        .first();
-      if (override) {
-        // Merge defined override values
-        if (override.caloriesGoal) current.caloriesGoal = override.caloriesGoal;
-        if (override.fatGoal) current.fatGoal = override.fatGoal;
-        if (override.carbsGoal) current.carbsGoal = override.carbsGoal;
-        if (override.proteinGoal) current.proteinGoal = override.proteinGoal;
-        if (override.sugarGoal) current.sugarGoal = override.sugarGoal;
-        if (override.saltGoal) current.saltGoal = override.saltGoal;
-        if (override.fiberGoal) current.fiberGoal = override.fiberGoal;
-      }
-    }
-
-    if (current) {
-      updateGoalsDraft({
-        caloriesGoal: current.caloriesGoal || 2000,
-        fatGoal: current.fatGoal || 0,
-        carbsGoal: current.carbsGoal || 0,
-        proteinGoal: current.proteinGoal || 0,
-        sugarGoal: current.sugarGoal || 0,
-        saltGoal: current.saltGoal || 0,
-        fiberGoal: current.fiberGoal || 0,
-      });
-    }
-  }, [overrideDate, updateGoalsDraft]);
+  const [calories, setCalories] = useState(2700);
+  const [fat, setFat] = useState(90);
+  const [carbs, setCarbs] = useState(304);
+  const [protein, setProtein] = useState(169);
+  const [sugar, setSugar] = useState(50);
+  const [salt, setSalt] = useState(6);
+  const [fiber, setFiber] = useState(30);
 
   useEffect(() => {
-    if (open) {
-      loadGoals();
+    let cancelled = false;
+
+    async function loadGoals() {
+      const defaults = await db.dailyGoals.orderBy("id").first();
+      const current = {
+        calories: defaults?.calories ?? 2700,
+        fat: defaults?.fat ?? 90,
+        carbs: defaults?.carbs ?? 304,
+        protein: defaults?.protein ?? 169,
+        sugar: defaults?.sugar ?? 50,
+        salt: defaults?.salt ?? 6,
+        fiber: defaults?.fiber ?? 30,
+      };
+
+      if (overrideDate) {
+        const override = await db.dailyGoalOverrides
+          .where("date")
+          .equals(overrideDate)
+          .first();
+        if (override) {
+          if (override.calories) current.calories = override.calories;
+          if (override.fat) current.fat = override.fat;
+          if (override.carbs) current.carbs = override.carbs;
+          if (override.protein) current.protein = override.protein;
+          if (override.sugar) current.sugar = override.sugar;
+          if (override.salt) current.salt = override.salt;
+          if (override.fiber) current.fiber = override.fiber;
+        }
+      }
+
+      if (cancelled) return;
+      setCalories(current.calories);
+      setFat(current.fat);
+      setCarbs(current.carbs);
+      setProtein(current.protein);
+      setSugar(current.sugar);
+      setSalt(current.salt);
+      setFiber(current.fiber);
     }
-  }, [open, loadGoals]);
+
+    loadGoals();
+    return () => { cancelled = true; };
+  }, [overrideDate]);
 
   const handleSave = async () => {
     try {
       if (overrideDate) {
-        // Save override
-        // Check if exists
         const existing = await db.dailyGoalOverrides
           .where("date")
           .equals(overrideDate)
           .first();
         if (existing) {
-          await db.dailyGoalOverrides.update(existing.id!, {
-            caloriesGoal,
-            fatGoal,
-            carbsGoal,
-            proteinGoal,
-            sugarGoal,
-            saltGoal,
-            fiberGoal,
+          await db.dailyGoalOverrides.update(existing.id, {
+            calories,
+            fat,
+            carbs,
+            protein,
+            sugar,
+            salt,
+            fiber,
           });
         } else {
           await db.dailyGoalOverrides.add({
             date: overrideDate,
-            caloriesGoal,
-            fatGoal,
-            carbsGoal,
-            proteinGoal,
-            sugarGoal,
-            saltGoal,
-            fiberGoal,
+            calories,
+            fat,
+            carbs,
+            protein,
+            sugar,
+            salt,
+            fiber,
           });
         }
       } else {
-        // Save defaults
-        // Update first record
         const first = await db.dailyGoals.orderBy("id").first();
         if (first) {
-          await db.dailyGoals.update(first.id!, {
-            caloriesGoal,
-            fatGoal,
-            carbsGoal,
-            proteinGoal,
-            sugarGoal,
-            saltGoal,
-            fiberGoal,
+          await db.dailyGoals.update(first.id, {
+            calories,
+            fat,
+            carbs,
+            protein,
+            sugar,
+            salt,
+            fiber,
           });
         } else {
           await db.dailyGoals.add({
-            caloriesGoal,
-            fatGoal,
-            carbsGoal,
-            proteinGoal,
-            sugarGoal,
-            saltGoal,
-            fiberGoal,
+            calories,
+            fat,
+            carbs,
+            protein,
+            sugar,
+            salt,
+            fiber,
           });
         }
       }
-      closeGoalsDrawer();
       navigateBack();
     } catch (e) {
       console.error("Failed to save goals", e);
     }
-  };
-
-  const handleBack = () => {
-    closeGoalsDrawer();
-    navigateBack();
   };
 
   const title = overrideDate
@@ -156,37 +133,31 @@ export function GoalsPage() {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
+        <Button variant="ghost" size="icon" onClick={navigateBack}>
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Zurück</span>
         </Button>
         <h2 className="text-foreground font-semibold">{title}</h2>
       </div>
+
       <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
         <div className="space-y-1">
           <Label>Kalorien (kcal)</Label>
           <Input
             type="number"
             inputMode="tel"
-            value={caloriesGoal}
-            onChange={(e) =>
-              updateGoalsDraft({
-                caloriesGoal: parseFloat(e.target.value) || 0,
-              })
-            }
+            value={calories}
+            onChange={(e) => setCalories(parseFloat(e.target.value) || 0)}
           />
         </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label>Fett (g)</Label>
             <Input
               type="number"
               inputMode="tel"
-              value={fatGoal}
-              onChange={(e) =>
-                updateGoalsDraft({ fatGoal: parseFloat(e.target.value) || 0 })
-              }
+              value={fat}
+              onChange={(e) => setFat(parseFloat(e.target.value) || 0)}
             />
           </div>
           <div className="space-y-1">
@@ -194,12 +165,8 @@ export function GoalsPage() {
             <Input
               type="number"
               inputMode="tel"
-              value={carbsGoal}
-              onChange={(e) =>
-                updateGoalsDraft({
-                  carbsGoal: parseFloat(e.target.value) || 0,
-                })
-              }
+              value={carbs}
+              onChange={(e) => setCarbs(parseFloat(e.target.value) || 0)}
             />
           </div>
           <div className="space-y-1">
@@ -207,12 +174,8 @@ export function GoalsPage() {
             <Input
               type="number"
               inputMode="tel"
-              value={proteinGoal}
-              onChange={(e) =>
-                updateGoalsDraft({
-                  proteinGoal: parseFloat(e.target.value) || 0,
-                })
-              }
+              value={protein}
+              onChange={(e) => setProtein(parseFloat(e.target.value) || 0)}
             />
           </div>
           <div className="space-y-1">
@@ -220,12 +183,8 @@ export function GoalsPage() {
             <Input
               type="number"
               inputMode="tel"
-              value={sugarGoal}
-              onChange={(e) =>
-                updateGoalsDraft({
-                  sugarGoal: parseFloat(e.target.value) || 0,
-                })
-              }
+              value={sugar}
+              onChange={(e) => setSugar(parseFloat(e.target.value) || 0)}
             />
           </div>
           <div className="space-y-1">
@@ -233,12 +192,8 @@ export function GoalsPage() {
             <Input
               type="number"
               inputMode="tel"
-              value={saltGoal}
-              onChange={(e) =>
-                updateGoalsDraft({
-                  saltGoal: parseFloat(e.target.value) || 0,
-                })
-              }
+              value={salt}
+              onChange={(e) => setSalt(parseFloat(e.target.value) || 0)}
             />
           </div>
           <div className="space-y-1">
@@ -246,16 +201,13 @@ export function GoalsPage() {
             <Input
               type="number"
               inputMode="tel"
-              value={fiberGoal}
-              onChange={(e) =>
-                updateGoalsDraft({
-                  fiberGoal: parseFloat(e.target.value) || 0,
-                })
-              }
+              value={fiber}
+              onChange={(e) => setFiber(parseFloat(e.target.value) || 0)}
             />
           </div>
         </div>
       </div>
+
       <div className="flex p-10 pt-6 pb-6 shrink-0">
         <Button className="flex-1 gap-2" onClick={handleSave}>
           <Save className="h-4 w-4" />

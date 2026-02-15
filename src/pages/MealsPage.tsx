@@ -1,17 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useDraftStore } from "@/stores/draft-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { format } from "date-fns";
 import { ArrowLeft, Save, Trash2, X, Scan } from "lucide-react";
-import type {
-  MealItemDraft,
-  Ingredient,
-  Meal,
-  MealItem,
-  Recipe,
-} from "@/types";
+import type { Ingredient, Recipe } from "@/types";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { fetchProductByBarcode } from "@/lib/openfoodfacts";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
@@ -26,18 +21,37 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function MealsPage() {
-  const {
-    mealDraft,
-    closeMeals,
-    updateMealDraft,
-    addMealItem,
-    removeMealItem,
-    updateMealItem,
-    clearMealDraft,
-  } = useDraftStore();
+interface DraftItem {
+  ingredientId: number;
+  name: string;
+  amount: number;
+  unit: "g" | "ml";
+  calories: number;
+  fat: number;
+  carbs: number;
+  sugar: number;
+  protein: number;
+  salt: number;
+  fiber: number;
+}
 
-  const { open, mode, editId, date, time, items } = mealDraft;
+export function MealsPage() {
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("id")
+    ? Number(searchParams.get("id"))
+    : undefined;
+  const paramDate = searchParams.get("date");
+  const mode = editId ? "edit" : "create";
+
+  const [date, setDate] = useState(
+    paramDate || format(new Date(), "yyyy-MM-dd"),
+  );
+  const [time, setTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  });
+  const [items, setItems] = useState<DraftItem[]>([]);
+
   const isOnline = useOnlineStatus();
   const { navigateBack } = useViewTransitionNavigate();
   const [isScanning, setIsScanning] = useState(false);
@@ -48,138 +62,127 @@ export function MealsPage() {
   const recipeQuery = searchTerm.trim().length > 0 ? searchTerm : undefined;
   const recipes = useRecipes(recipeQuery);
 
-  // Load meal data if in edit mode
+  // Load meal data if editing
   useEffect(() => {
-    if (open && mode === "edit" && editId) {
+    if (mode === "edit" && editId) {
       db.meals.get(editId).then(async (meal) => {
-        if (meal) {
-          const dbItems = await db.mealItems
-            .where("mealId")
-            .equals(meal.id!)
-            .toArray();
+        if (!meal) return;
+        const dbItems = await db.mealIngredients
+          .where("mealId")
+          .equals(meal.id)
+          .toArray();
 
-          const draftItems: MealItemDraft[] = dbItems.map((item) => ({
-            ingredientId: item.ingredientId,
-            name: item.name,
-            amount: item.amount,
-            unit: item.unit,
-            sourceRecipeName: item.sourceRecipeName,
-            sourceRecipeBaseAmount: item.sourceRecipeBaseAmount,
-            sourceRecipePortions: item.sourceRecipePortions,
-            sourceRecipeTotalServings: item.sourceRecipeTotalServings,
-            caloriesPer100: item.caloriesPer100,
-            fatPer100: item.fatPer100,
-            carbsPer100: item.carbsPer100,
-            sugarPer100: item.sugarPer100,
-            proteinPer100: item.proteinPer100,
-            saltPer100: item.saltPer100,
-            fiberPer100: item.fiberPer100,
-          }));
+        const draftItems: DraftItem[] = await Promise.all(
+          dbItems.map(async (item) => {
+            const ing = await db.ingredients.get(item.ingredientId);
+            return {
+              ingredientId: item.ingredientId,
+              name: ing?.name ?? "Unbekannt",
+              amount: item.amount,
+              unit: item.unit,
+              calories: item.calories,
+              fat: item.fat,
+              carbs: item.carbs,
+              sugar: item.sugar,
+              protein: item.protein,
+              salt: item.salt,
+              fiber: item.fiber,
+            };
+          }),
+        );
 
-          updateMealDraft({
-            date: meal.date,
-            time: meal.time,
-            items: draftItems,
-          });
-        }
+        setDate(meal.date);
+        setTime(meal.time);
+        setItems(draftItems);
       });
     }
-  }, [open, mode, editId, updateMealDraft]);
+  }, [mode, editId]);
+
+  const addItem = (item: DraftItem) =>
+    setItems((prev) => [...prev, item]);
+  const removeItem = (index: number) =>
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  const updateItem = (index: number, partial: Partial<DraftItem>) =>
+    setItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, ...partial } : item)),
+    );
 
   const handleSelectIngredient = (ing: Ingredient) => {
-    const newItem: MealItemDraft = {
+    addItem({
       ingredientId: ing.id,
       name: ing.name,
       amount: ing.defaultServing || 100,
       unit: ing.unit,
-      caloriesPer100: ing.calories,
-      fatPer100: ing.fat,
-      carbsPer100: ing.carbs,
-      sugarPer100: ing.sugar,
-      proteinPer100: ing.protein,
-      saltPer100: ing.salt,
-      fiberPer100: ing.fiber,
-    };
-    addMealItem(newItem);
+      calories: ing.calories,
+      fat: ing.fat,
+      carbs: ing.carbs,
+      sugar: ing.sugar,
+      protein: ing.protein,
+      salt: ing.salt,
+      fiber: ing.fiber,
+    });
   };
 
   const handleSelectRecipe = async (recipe: Recipe) => {
-    if (!recipe.id) return;
-
     const recipeItems = await db.recipeIngredients
       .where("recipeId")
       .equals(recipe.id)
       .toArray();
 
-    const ingredientMap = new Map<number, Ingredient>();
-    const ingredientIds = Array.from(
-      new Set(recipeItems.map((item) => item.ingredientId)),
-    );
+    const newItems: DraftItem[] = [];
+    for (const ri of recipeItems) {
+      const ing = await db.ingredients.get(ri.ingredientId);
+      if (!ing) continue;
 
-    for (const ingredientId of ingredientIds) {
-      const ingredient = await db.ingredients.get(ingredientId);
-      if (ingredient?.id) {
-        ingredientMap.set(ingredient.id, ingredient);
-      }
-    }
-
-    const draftItems: MealItemDraft[] = [];
-    for (const item of recipeItems) {
-      const ingredient = ingredientMap.get(item.ingredientId);
-      if (!ingredient || ingredient.id === undefined) {
-        continue;
-      }
-
-      draftItems.push({
-        ingredientId: ingredient.id,
-        name: ingredient.name,
-        amount: item.amount * (1 / Math.max(1, recipe.servings)),
-        sourceRecipeName: recipe.name,
-        sourceRecipeBaseAmount: item.amount,
-        sourceRecipePortions: 1,
-        sourceRecipeTotalServings: Math.max(1, recipe.servings),
-        unit: ingredient.unit,
-        caloriesPer100: ingredient.calories,
-        fatPer100: ingredient.fat,
-        carbsPer100: ingredient.carbs,
-        sugarPer100: ingredient.sugar,
-        proteinPer100: ingredient.protein,
-        saltPer100: ingredient.salt,
-        fiberPer100: ingredient.fiber,
+      newItems.push({
+        ingredientId: ing.id,
+        name: ing.name,
+        amount: ri.amount / Math.max(1, recipe.servings),
+        unit: ing.unit,
+        calories: ing.calories,
+        fat: ing.fat,
+        carbs: ing.carbs,
+        sugar: ing.sugar,
+        protein: ing.protein,
+        salt: ing.salt,
+        fiber: ing.fiber,
       });
     }
 
-    updateMealDraft({ items: [...items, ...draftItems] });
+    setItems((prev) => [...prev, ...newItems]);
     setSearchTerm("");
     setIsRecipeSearchFocused(false);
   };
 
   const handleScan = async (code: string) => {
     setIsScanning(false);
-    // 1. Search local DB for barcode
     const localIng = await db.ingredients.where("barcode").equals(code).first();
     if (localIng) {
       handleSelectIngredient(localIng);
       return;
     }
 
-    // 2. Fetch API
     if (isOnline) {
       const product = await fetchProductByBarcode(code);
       if (product.found) {
-        const newItem: MealItemDraft = {
+        // Auto-create ingredient in DB
+        const id = await db.ingredients.add({
+          barcode: code,
           name: product.name || "Gescanntes Produkt",
-          amount: 100,
           unit: product.unit,
-          caloriesPer100: product.calories,
-          fatPer100: product.fat,
-          carbsPer100: product.carbs,
-          sugarPer100: product.sugar,
-          proteinPer100: product.protein,
-          saltPer100: product.salt,
-          fiberPer100: product.fiber,
-        };
-        addMealItem(newItem);
+          calories: product.calories,
+          fat: product.fat,
+          carbs: product.carbs,
+          sugar: product.sugar,
+          protein: product.protein,
+          salt: product.salt,
+          fiber: product.fiber,
+          defaultServing: 100,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        const newIng = await db.ingredients.get(id);
+        if (newIng) handleSelectIngredient(newIng);
         return;
       }
     }
@@ -187,107 +190,80 @@ export function MealsPage() {
     alert("Produkt nicht gefunden (oder offline).");
   };
 
-  const handleCreateMeal = async () => {
+  const handleSave = async () => {
     if (items.length === 0) return;
 
     try {
-      const recipeNames = Array.from(
-        new Set(items.map((item) => item.sourceRecipeName).filter(Boolean)),
-      ) as string[];
       const ingredientNames = Array.from(
         new Set(items.map((item) => item.name).filter(Boolean)),
       );
       const mealName =
-        recipeNames.length > 0
-          ? recipeNames.join(", ")
-          : ingredientNames.length > 0
-            ? ingredientNames.join(", ")
-            : "Mahlzeit";
+        ingredientNames.length > 0
+          ? ingredientNames.join(", ")
+          : "Mahlzeit";
 
-      const mealData: Omit<Meal, "id" | "createdAt"> = {
-        date,
-        time,
-        name: mealName,
-        updatedAt: new Date(),
-      };
-
-      let currentMealId: number | undefined = editId;
+      let currentMealId = editId;
 
       if (mode === "edit" && editId) {
-        await db.meals.update(editId, mealData);
-        // Clear old items
-        const oldItems = await db.mealItems
+        await db.meals.update(editId, {
+          date,
+          time,
+          name: mealName,
+          updatedAt: new Date(),
+        });
+        const oldItems = await db.mealIngredients
           .where("mealId")
           .equals(editId)
           .toArray();
-        await db.mealItems.bulkDelete(
-          oldItems.map((i) => i.id!).filter(Boolean),
-        );
+        await db.mealIngredients.bulkDelete(oldItems.map((i) => i.id));
       } else {
-        const id = await db.meals.add({
-          ...mealData,
+        currentMealId = await db.meals.add({
+          date,
+          time,
+          name: mealName,
           createdAt: new Date(),
+          updatedAt: new Date(),
         });
-        currentMealId = id;
       }
 
-      // Add items
-      const mealItemsToInsert: Omit<MealItem, "id">[] = items.map((item) => ({
-        mealId: currentMealId!,
-        ingredientId: item.ingredientId,
-        name: item.name,
-        amount: item.amount,
-        unit: item.unit,
-        sourceRecipeName: item.sourceRecipeName,
-        sourceRecipeBaseAmount: item.sourceRecipeBaseAmount,
-        sourceRecipePortions: item.sourceRecipePortions,
-        sourceRecipeTotalServings: item.sourceRecipeTotalServings,
-        caloriesPer100: item.caloriesPer100,
-        fatPer100: item.fatPer100,
-        carbsPer100: item.carbsPer100,
-        sugarPer100: item.sugarPer100,
-        proteinPer100: item.proteinPer100,
-        saltPer100: item.saltPer100,
-        fiberPer100: item.fiberPer100,
-      }));
-
-      await Promise.all(
-        mealItemsToInsert.map((mealItem) => db.mealItems.add(mealItem)),
+      await db.mealIngredients.bulkAdd(
+        items.map((item) => ({
+          mealId: currentMealId!,
+          ingredientId: item.ingredientId,
+          amount: item.amount,
+          unit: item.unit,
+          calories: item.calories,
+          fat: item.fat,
+          carbs: item.carbs,
+          sugar: item.sugar,
+          protein: item.protein,
+          salt: item.salt,
+          fiber: item.fiber,
+        })),
       );
 
-      clearMealDraft();
-      closeMeals();
       navigateBack();
     } catch (error) {
       console.error("Failed to save meal", error);
     }
   };
 
-  const handleDeleteMeal = async () => {
+  const handleDelete = async () => {
     if (mode !== "edit" || !editId) return;
 
     try {
-      const mealItems = await db.mealItems
+      const mealItems = await db.mealIngredients
         .where("mealId")
         .equals(editId)
         .toArray();
-      await db.mealItems.bulkDelete(
-        mealItems.map((item) => item.id!).filter(Boolean),
-      );
+      await db.mealIngredients.bulkDelete(mealItems.map((item) => item.id));
       await db.meals.delete(editId);
 
       setConfirmDeleteOpen(false);
-      clearMealDraft();
-      closeMeals();
       navigateBack();
     } catch (error) {
       console.error("Failed to delete meal", error);
     }
-  };
-
-  const handleBack = () => {
-    closeMeals();
-    navigateBack();
   };
 
   const totals = useMemo(() => {
@@ -295,13 +271,13 @@ export function MealsPage() {
       (acc, item) => {
         const factor = item.amount / 100;
         return {
-          calories: acc.calories + item.caloriesPer100 * factor,
-          fat: acc.fat + item.fatPer100 * factor,
-          carbs: acc.carbs + item.carbsPer100 * factor,
-          sugar: acc.sugar + item.sugarPer100 * factor,
-          protein: acc.protein + item.proteinPer100 * factor,
-          salt: acc.salt + item.saltPer100 * factor,
-          fiber: acc.fiber + item.fiberPer100 * factor,
+          calories: acc.calories + item.calories * factor,
+          fat: acc.fat + item.fat * factor,
+          carbs: acc.carbs + item.carbs * factor,
+          sugar: acc.sugar + item.sugar * factor,
+          protein: acc.protein + item.protein * factor,
+          salt: acc.salt + item.salt * factor,
+          fiber: acc.fiber + item.fiber * factor,
         };
       },
       {
@@ -316,85 +292,10 @@ export function MealsPage() {
     );
   }, [items]);
 
-  const groupedItems = useMemo(() => {
-    const recipeGroups = new Map<
-      string,
-      Array<{ item: MealItemDraft; index: number }>
-    >();
-    const otherItems: Array<{ item: MealItemDraft; index: number }> = [];
-
-    items.forEach((item, index) => {
-      if (item.sourceRecipeName) {
-        const existing = recipeGroups.get(item.sourceRecipeName) ?? [];
-        recipeGroups.set(item.sourceRecipeName, [...existing, { item, index }]);
-        return;
-      }
-
-      otherItems.push({ item, index });
-    });
-
-    const sections: Array<{
-      label?: string;
-      isRecipeGroup: boolean;
-      portions: number;
-      entries: Array<{ item: MealItemDraft; index: number }>;
-    }> = [];
-
-    recipeGroups.forEach((entries, recipeName) => {
-      const firstEntry = entries[0]?.item;
-      sections.push({
-        label: recipeName,
-        isRecipeGroup: true,
-        portions: firstEntry?.sourceRecipePortions || 1,
-        entries,
-      });
-    });
-
-    if (otherItems.length > 0) {
-      sections.push({
-        label: sections.length > 0 ? "Weitere Zutaten" : undefined,
-        isRecipeGroup: false,
-        portions: 1,
-        entries: otherItems,
-      });
-    }
-
-    return sections;
-  }, [items]);
-
-  const handleRecipePortionsChange = (
-    recipeName: string,
-    newPortions: number,
-  ) => {
-    const safePortions = newPortions > 0 ? newPortions : 1;
-
-    const updatedItems = items.map((item) => {
-      if (item.sourceRecipeName !== recipeName) {
-        return item;
-      }
-
-      const currentPortions = item.sourceRecipePortions || 1;
-      const baseAmount =
-        item.sourceRecipeBaseAmount ??
-        (currentPortions > 0 ? item.amount / currentPortions : item.amount);
-      const totalServings = Math.max(1, item.sourceRecipeTotalServings || 1);
-
-      return {
-        ...item,
-        amount: baseAmount * (safePortions / totalServings),
-        sourceRecipeBaseAmount: baseAmount,
-        sourceRecipePortions: safePortions,
-        sourceRecipeTotalServings: totalServings,
-      };
-    });
-
-    updateMealDraft({ items: updatedItems });
-  };
-
   return (
     <>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
+        <Button variant="ghost" size="icon" onClick={navigateBack}>
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Zurück</span>
         </Button>
@@ -402,20 +303,22 @@ export function MealsPage() {
           {mode === "create" ? "Mahlzeit hinzufügen" : "Mahlzeit bearbeiten"}
         </h2>
       </div>
+
       <div className="flex items-center gap-2">
         <Input
           type="date"
           value={date}
-          onChange={(e) => updateMealDraft({ date: e.target.value })}
+          onChange={(e) => setDate(e.target.value)}
           className="w-auto h-9 text-sm flex-1"
         />
         <Input
           type="time"
           value={time}
-          onChange={(e) => updateMealDraft({ time: e.target.value })}
+          onChange={(e) => setTime(e.target.value)}
           className="w-24 h-9 text-sm flex-1"
         />
       </div>
+
       <div className="relative">
         <Input
           type="search"
@@ -423,9 +326,7 @@ export function MealsPage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => setIsRecipeSearchFocused(true)}
-          onBlur={() => {
-            setTimeout(() => setIsRecipeSearchFocused(false), 200);
-          }}
+          onBlur={() => setTimeout(() => setIsRecipeSearchFocused(false), 200)}
           className="pr-9"
         />
 
@@ -480,77 +381,43 @@ export function MealsPage() {
       </div>
 
       {/* Items List */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
-        {groupedItems.map((section, sectionIndex) => (
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
+        {items.map((item, index) => (
           <div
-            key={`${section.label ?? "items"}-${sectionIndex}`}
-            className="space-y-2">
-            {section.label ? (
-              <div className="flex items-center justify-between gap-2 px-1">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {section.label}
-                </div>
-                {section.isRecipeGroup ? (
-                  <select
-                    value={section.portions}
-                    onChange={(e) =>
-                      handleRecipePortionsChange(
-                        section.label!,
-                        parseInt(e.target.value) || 1,
-                      )
-                    }
-                    className="h-8 w-20 rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-xs">
-                    {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
+            key={index}
+            className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
+            <div className="flex-1 overflow-hidden">
+              <div className="font-medium text-sm truncate">{item.name}</div>
+              <div className="text-xs text-muted-foreground">
+                {Math.round(item.calories)} kcal / 100{item.unit}
               </div>
-            ) : null}
+            </div>
 
-            {section.entries.map(({ item, index }) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
-                <div className="flex-1 overflow-hidden">
-                  <div className="font-medium text-sm truncate">
-                    {item.name}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {Math.round(item.caloriesPer100)} kcal / 100
-                    {item.unit}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="relative w-24">
-                    <Input
-                      type="number"
-                      inputMode="tel"
-                      value={item.amount || ""}
-                      onChange={(e) =>
-                        updateMealItem(index, {
-                          amount: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="h-8 pr-8 text-right bg-background"
-                    />
-                    <span className="absolute right-3 top-2 text-xs text-muted-foreground">
-                      {item.unit}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                    onClick={() => removeMealItem(index)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+            <div className="flex items-center gap-2">
+              <div className="relative w-24">
+                <Input
+                  type="number"
+                  inputMode="tel"
+                  value={item.amount || ""}
+                  onChange={(e) =>
+                    updateItem(index, {
+                      amount: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="h-8 pr-8 text-right bg-background"
+                />
+                <span className="absolute right-3 top-2 text-xs text-muted-foreground">
+                  {item.unit}
+                </span>
               </div>
-            ))}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                onClick={() => removeItem(index)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>
@@ -598,7 +465,7 @@ export function MealsPage() {
             ) : null}
             <Button
               className="flex-1"
-              onClick={handleCreateMeal}
+              onClick={handleSave}
               disabled={items.length === 0}>
               <Save className="h-4 w-4" />
               Speichern
@@ -628,7 +495,7 @@ export function MealsPage() {
               onClick={() => setConfirmDeleteOpen(false)}>
               Abbrechen
             </Button>
-            <Button variant="destructive" onClick={handleDeleteMeal}>
+            <Button variant="destructive" onClick={handleDelete}>
               Löschen
             </Button>
           </DialogFooter>
