@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useDrawerStore } from "@/stores/drawer-store";
+import { useDraftStore } from "@/stores/draft-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
@@ -26,16 +26,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function MealDrawerContent() {
+export function MealsPage() {
   const {
     mealDraft,
-    closeMealDrawer,
+    closeMeals,
     updateMealDraft,
     addMealItem,
     removeMealItem,
     updateMealItem,
     clearMealDraft,
-  } = useDrawerStore();
+  } = useDraftStore();
 
   const { open, mode, editId, date, time, items } = mealDraft;
   const isOnline = useOnlineStatus();
@@ -256,7 +256,7 @@ export function MealDrawerContent() {
       );
 
       clearMealDraft();
-      closeMealDrawer();
+      closeMeals();
       navigateBack();
     } catch (error) {
       console.error("Failed to save meal", error);
@@ -278,7 +278,7 @@ export function MealDrawerContent() {
 
       setConfirmDeleteOpen(false);
       clearMealDraft();
-      closeMealDrawer();
+      closeMeals();
       navigateBack();
     } catch (error) {
       console.error("Failed to delete meal", error);
@@ -286,7 +286,7 @@ export function MealDrawerContent() {
   };
 
   const handleBack = () => {
-    closeMealDrawer();
+    closeMeals();
     navigateBack();
   };
 

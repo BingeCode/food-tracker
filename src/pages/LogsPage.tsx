@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { useMealsByDate, useDailyGoals } from "@/hooks/useMeals";
-import { useDrawerStore } from "@/stores/drawer-store";
+import { useDraftStore } from "@/stores/draft-store";
 import { DateNavigator } from "@/components/DateNavigator";
 import { NutritionSummary } from "@/components/NutritionSummary";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,11 @@ import { Plus, ChevronRight } from "lucide-react";
 import type { NutritionValues } from "@/types";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
-export function LogPage() {
+export function LogsPage() {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const meals = useMealsByDate(date);
   const goals = useDailyGoals(date);
-  const { openMealDrawer } = useDrawerStore();
+  const { openMeals: openMealDrawer } = useDraftStore();
   const { navigateTo } = useViewTransitionNavigate();
 
   const fallbackGoals: NutritionValues & { calories: number } = {

@@ -64,7 +64,7 @@ const defaultGoalsDraft: GoalsDraft = {
 
 // ── Store interface ─────────────────────────────────────────
 
-interface DrawerStore {
+interface Store {
   // Drafts
   mealDraft: MealDraft;
   recipeDraft: RecipeDraft;
@@ -72,12 +72,8 @@ interface DrawerStore {
   goalsDraft: GoalsDraft;
 
   // ── Meal actions ──────────────────────────────────────────
-  openMealDrawer: (
-    mode: "create" | "edit",
-    editId?: number,
-    date?: string,
-  ) => void;
-  closeMealDrawer: () => void;
+  openMeals: (mode: "create" | "edit", editId?: number, date?: string) => void;
+  closeMeals: () => void;
   updateMealDraft: (partial: Partial<MealDraft>) => void;
   setMealItems: (items: MealItemDraft[]) => void;
   addMealItem: (item: MealItemDraft) => void;
@@ -86,8 +82,8 @@ interface DrawerStore {
   clearMealDraft: () => void;
 
   // ── Recipe actions ────────────────────────────────────────
-  openRecipeDrawer: (mode: "create" | "edit", editId?: number) => void;
-  closeRecipeDrawer: () => void;
+  openRecipes: (mode: "create" | "edit", editId?: number) => void;
+  closeRecipes: () => void;
   updateRecipeDraft: (partial: Partial<RecipeDraft>) => void;
   setRecipeItems: (items: MealItemDraft[]) => void;
   addRecipeItem: (item: MealItemDraft) => void;
@@ -96,24 +92,24 @@ interface DrawerStore {
   clearRecipeDraft: () => void;
 
   // ── Ingredient actions ────────────────────────────────────
-  openIngredientDrawer: (mode: "create" | "edit", editId?: number) => void;
-  closeIngredientDrawer: () => void;
+  openIngredients: (mode: "create" | "edit", editId?: number) => void;
+  closeIngredient: () => void;
   updateIngredientDraft: (partial: Partial<IngredientDraft>) => void;
   clearIngredientDraft: () => void;
 
   // ── Goals actions ─────────────────────────────────────────
-  openGoalsDrawer: (date?: string) => void;
-  closeGoalsDrawer: () => void;
+  openGoals: (date?: string) => void;
+  closeGoals: () => void;
   updateGoalsDraft: (partial: Partial<GoalsDraft>) => void;
   clearGoalsDraft: () => void;
 
   // ── Global ────────────────────────────────────────────────
-  closeAllDrawers: () => void;
+  closeAllSubPages: () => void;
 }
 
 // ── Store implementation ────────────────────────────────────
 
-export const useDrawerStore = create<DrawerStore>((set) => ({
+export const useDraftStore = create<Store>((set) => ({
   mealDraft: { ...defaultMealDraft },
   recipeDraft: { ...defaultRecipeDraft },
   ingredientDraft: { ...defaultIngredientDraft },
@@ -121,7 +117,7 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   // ── Meal ──────────────────────────────────────────────────
 
-  openMealDrawer: (mode, editId, date) =>
+  openMeals: (mode, editId, date) =>
     set((state) => ({
       mealDraft:
         mode === "edit"
@@ -144,7 +140,7 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
             },
     })),
 
-  closeMealDrawer: () =>
+  closeMeals: () =>
     set((state) => ({
       mealDraft:
         state.mealDraft.mode === "edit"
@@ -193,7 +189,7 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   // ── Recipe ────────────────────────────────────────────────
 
-  openRecipeDrawer: (mode, editId) =>
+  openRecipes: (mode, editId) =>
     set((state) => ({
       recipeDraft:
         mode === "edit"
@@ -208,7 +204,7 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
             },
     })),
 
-  closeRecipeDrawer: () =>
+  closeRecipes: () =>
     set((state) => ({
       recipeDraft:
         state.recipeDraft.mode === "edit"
@@ -256,7 +252,7 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   // ── Ingredient ────────────────────────────────────────────
 
-  openIngredientDrawer: (mode, editId) =>
+  openIngredients: (mode, editId) =>
     set((state) => ({
       ingredientDraft:
         mode === "edit"
@@ -271,7 +267,7 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
             },
     })),
 
-  closeIngredientDrawer: () =>
+  closeIngredient: () =>
     set((state) => ({
       ingredientDraft:
         state.ingredientDraft.mode === "edit"
@@ -289,12 +285,12 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   // ── Goals ─────────────────────────────────────────────────
 
-  openGoalsDrawer: (date) =>
+  openGoals: (date) =>
     set((state) => ({
       goalsDraft: { ...state.goalsDraft, open: true, overrideDate: date },
     })),
 
-  closeGoalsDrawer: () =>
+  closeGoals: () =>
     set((state) => ({
       goalsDraft: { ...state.goalsDraft, open: false },
     })),
@@ -308,7 +304,7 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   // ── Global ────────────────────────────────────────────────
 
-  closeAllDrawers: () =>
+  closeAllSubPages: () =>
     set((state) => ({
       mealDraft: { ...state.mealDraft, open: false },
       recipeDraft: { ...state.recipeDraft, open: false },

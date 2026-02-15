@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDrawerStore } from "@/stores/drawer-store";
+import { useDraftStore } from "@/stores/draft-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
@@ -25,16 +25,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function RecipeDrawerContent() {
+export function RecipesPage() {
   const {
     recipeDraft,
-    closeRecipeDrawer,
+    closeRecipes,
     updateRecipeDraft,
     addRecipeItem,
     removeRecipeItem,
     updateRecipeItem,
     clearRecipeDraft,
-  } = useDrawerStore();
+  } = useDraftStore();
 
   const { open, mode, editId, name, items, servings } = recipeDraft;
   const isOnline = useOnlineStatus();
@@ -193,7 +193,7 @@ export function RecipeDrawerContent() {
       await db.recipeIngredients.bulkAdd(itemsToSave);
 
       clearRecipeDraft();
-      closeRecipeDrawer();
+      closeRecipes();
       navigateBack();
     } catch (error) {
       console.error("Failed to save recipe", error);
@@ -215,7 +215,7 @@ export function RecipeDrawerContent() {
 
       setConfirmDeleteOpen(false);
       clearRecipeDraft();
-      closeRecipeDrawer();
+      closeRecipes();
       navigateBack();
     } catch (error) {
       console.error("Failed to delete recipe", error);
@@ -223,7 +223,7 @@ export function RecipeDrawerContent() {
   };
 
   const handleBack = () => {
-    closeRecipeDrawer();
+    closeRecipes();
     navigateBack();
   };
 

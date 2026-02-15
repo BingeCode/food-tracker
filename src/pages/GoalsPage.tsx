@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDrawerStore } from "@/stores/drawer-store";
+import { useDraftStore } from "@/stores/draft-store";
 import { db } from "@/lib/db";
 import { useCallback, useEffect } from "react";
 import { ArrowLeft, Save } from "lucide-react";
@@ -9,8 +9,12 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
-export function GoalsDrawerContent() {
-  const { goalsDraft, closeGoalsDrawer, updateGoalsDraft } = useDrawerStore();
+export function GoalsPage() {
+  const {
+    goalsDraft,
+    closeGoals: closeGoalsDrawer,
+    updateGoalsDraft,
+  } = useDraftStore();
   const { navigateBack } = useViewTransitionNavigate();
 
   const {

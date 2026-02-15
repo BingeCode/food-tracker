@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDrawerStore } from "@/stores/drawer-store";
+import { useDraftStore } from "@/stores/draft-store";
 import { db } from "@/lib/db";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { NutritionInputFields } from "@/components/NutritionInputFields";
@@ -20,13 +20,13 @@ import {
   DialogTitle as ConfirmDialogTitle,
 } from "@/components/ui/dialog";
 
-export function IngredientDrawerContent() {
+export function IngredientsPage() {
   const {
     ingredientDraft,
-    closeIngredientDrawer,
+    closeIngredient,
     updateIngredientDraft,
     clearIngredientDraft,
-  } = useDrawerStore();
+  } = useDraftStore();
   const isOnline = useOnlineStatus();
   const { navigateBack } = useViewTransitionNavigate();
   const [isScanning, setIsScanning] = useState(false);
@@ -169,7 +169,7 @@ export function IngredientDrawerContent() {
     }
 
     clearIngredientDraft();
-    closeIngredientDrawer();
+    closeIngredient();
     navigateBack();
   };
 
@@ -197,7 +197,7 @@ export function IngredientDrawerContent() {
 
       setConfirmDeleteOpen(false);
       clearIngredientDraft();
-      closeIngredientDrawer();
+      closeIngredient();
       navigateBack();
     } catch (error) {
       console.error("Failed to delete ingredient", error);
@@ -205,7 +205,7 @@ export function IngredientDrawerContent() {
   };
 
   const handleBack = () => {
-    closeIngredientDrawer();
+    closeIngredient();
     navigateBack();
   };
 

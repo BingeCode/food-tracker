@@ -1,5 +1,5 @@
 import { formatCompact } from "@/lib/nutrition";
-import { useDrawerStore } from "@/stores/drawer-store";
+import { useDraftStore } from "@/stores/draft-store";
 import type { NutritionValues } from "@/types";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
@@ -9,7 +9,7 @@ interface NutritionSummaryProps {
 }
 
 export function NutritionSummary({ current, goals }: NutritionSummaryProps) {
-  const openGoals = useDrawerStore((state) => state.openGoalsDrawer);
+  const openGoals = useDraftStore((state) => state.openGoals);
   const { navigateTo } = useViewTransitionNavigate();
 
   return (

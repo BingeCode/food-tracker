@@ -6,12 +6,12 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AppFooter } from "@/components/AppFooter";
-import { LogPage } from "@/pages/LogPage";
+import { LogsPage } from "@/pages/LogsPage";
 import { RecipesIngredientsPage } from "@/pages/RecipesIngredientsPage";
-import { MealDrawerContent } from "@/components/drawers/MealDrawerContent";
-import { RecipeDrawerContent } from "./components/drawers/RecipeDrawerContent";
-import { IngredientDrawerContent } from "@/components/drawers/IngredientDrawerContent";
-import { GoalsDrawerContent } from "@/components/drawers/GoalsDrawerContent";
+import { MealsPage } from "@/pages/MealsPage";
+import { RecipesPage } from "./pages/RecipesPage";
+import { IngredientsPage } from "@/pages/IngredientsPage";
+import { GoalsPage } from "@/pages/GoalsPage";
 
 function AppShell() {
   const location = useLocation();
@@ -27,12 +27,12 @@ function AppShell() {
         }`}>
         <Routes>
           <Route path="/" element={<Navigate to="/log" replace />} />
-          <Route path="/log" element={<LogPage />} />
+          <Route path="/log" element={<LogsPage />} />
           <Route path="/recipes" element={<RecipesIngredientsPage />} />
-          <Route path="/meal" element={<MealDrawerContent />} />
-          <Route path="/recipe" element={<RecipeDrawerContent />} />
-          <Route path="/ingredient" element={<IngredientDrawerContent />} />
-          <Route path="/goals" element={<GoalsDrawerContent />} />
+          <Route path="/meal" element={<MealsPage />} />
+          <Route path="/recipe" element={<RecipesPage />} />
+          <Route path="/ingredient" element={<IngredientsPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
           <Route path="*" element={<Navigate to="/log" replace />} />
         </Routes>
       </main>

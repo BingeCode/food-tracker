@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRecipes, useIngredients } from "@/hooks/useMeals";
-import { useDrawerStore } from "@/stores/drawer-store";
+import { useDraftStore } from "@/stores/draft-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +16,10 @@ export function RecipesIngredientsPage() {
     activeTab === "ingredients" ? searchTerm : undefined,
   );
 
-  const { openRecipeDrawer, openIngredientDrawer } = useDrawerStore();
+  const {
+    openRecipes: openRecipeDrawer,
+    openIngredients: openIngredientDrawer,
+  } = useDraftStore();
   const { navigateTo } = useViewTransitionNavigate();
 
   return (
