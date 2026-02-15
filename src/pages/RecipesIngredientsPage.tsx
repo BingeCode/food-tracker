@@ -26,7 +26,7 @@ export function RecipesIngredientsPage() {
 
   return (
     <div className="h-full flex flex-col min-h-0 gap-3">
-      <h1 className="text-xl font-bold">Bibliothek</h1>
+      <h1 className="text-xl font-bold">Sammlung</h1>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -43,6 +43,7 @@ export function RecipesIngredientsPage() {
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
+          inputMode="search"
           placeholder={
             activeTab === "recipes" ? "Rezepte suchen..." : "Zutaten suchen..."
           }

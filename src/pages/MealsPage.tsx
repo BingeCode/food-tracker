@@ -394,7 +394,7 @@ export function MealsPage() {
               <div className="relative w-24">
                 <Input
                   type="number"
-                  inputMode="tel"
+                  inputMode="decimal"
                   value={item.amount || ""}
                   onChange={(e) =>
                     updateItem(index, {

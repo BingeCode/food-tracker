@@ -293,7 +293,7 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 - [x] Plus/minus amount controls with defaultServing step
 - [x] Recipe search in meal editor (1+ char trigger)
 - [x] Date navigation with prev/next/today
-- [x] Bottom navigation (Tagebuch / Bibliothek)
+- [x] Bottom navigation (Tagebuch / Sammlung)
 - [x] Editor pages hide bottom nav
 
 ### Pending / Future

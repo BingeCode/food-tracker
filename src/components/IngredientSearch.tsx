@@ -32,6 +32,7 @@ export function IngredientSearch({
         <Input
           ref={inputRef}
           type="search"
+          inputMode="search"
           placeholder="Zutat suchen"
           className="pl-9 pr-9"
           value={term}

@@ -329,7 +329,7 @@ export function RecipesPage() {
               <div className="relative w-20">
                 <Input
                   type="number"
-                  inputMode="tel"
+                  inputMode="decimal"
                   value={item.amount || ""}
                   onChange={(e) =>
                     updateItemAmount(index, parseFloat(e.target.value) || 0)

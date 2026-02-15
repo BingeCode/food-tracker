@@ -294,7 +294,7 @@ export function IngredientsPage() {
             <Input
               id="serving"
               type="number"
-              inputMode="tel"
+              inputMode="numeric"
               value={defaultServing || ""}
               onChange={(e) =>
                 setDefaultServing(parseFloat(e.target.value) || 0)

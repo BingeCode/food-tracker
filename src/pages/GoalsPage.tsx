@@ -82,7 +82,7 @@ export function GoalsPage() {
           <Label>Kalorien (kcal)</Label>
           <Input
             type="number"
-            inputMode="tel"
+            inputMode="numeric"
             value={calories}
             onChange={(e) => setCalories(parseFloat(e.target.value))}
           />
@@ -103,7 +103,7 @@ export function GoalsPage() {
               <Label className="text-xs">Fett (%)</Label>
               <Input
                 type="number"
-                inputMode="tel"
+                inputMode="numeric"
                 value={fatPct}
                 onChange={(e) => setFatPct(parseFloat(e.target.value))}
               />
@@ -115,7 +115,7 @@ export function GoalsPage() {
               <Label className="text-xs">Kohlenhydrate (%)</Label>
               <Input
                 type="number"
-                inputMode="tel"
+                inputMode="numeric"
                 value={carbsPct}
                 onChange={(e) => setCarbsPct(parseFloat(e.target.value))}
               />
@@ -127,7 +127,7 @@ export function GoalsPage() {
               <Label className="text-xs">Eiweiß (%)</Label>
               <Input
                 type="number"
-                inputMode="tel"
+                inputMode="numeric"
                 value={proteinPct}
                 onChange={(e) => setProteinPct(parseFloat(e.target.value))}
               />
@@ -143,7 +143,7 @@ export function GoalsPage() {
             <Label>Zucker (g)</Label>
             <Input
               type="number"
-              inputMode="tel"
+              inputMode="numeric"
               value={sugar}
               onChange={(e) => setSugar(parseFloat(e.target.value))}
             />
@@ -152,7 +152,7 @@ export function GoalsPage() {
             <Label>Salz (g)</Label>
             <Input
               type="number"
-              inputMode="tel"
+              inputMode="numeric"
               value={salt}
               onChange={(e) => setSalt(parseFloat(e.target.value))}
             />
@@ -161,7 +161,7 @@ export function GoalsPage() {
             <Label>Ballaststoffe (g)</Label>
             <Input
               type="number"
-              inputMode="tel"
+              inputMode="numeric"
               value={fiber}
               onChange={(e) => setFiber(parseFloat(e.target.value))}
             />

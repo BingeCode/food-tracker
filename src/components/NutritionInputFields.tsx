@@ -42,7 +42,7 @@ export function NutritionInputFields({
             <Input
               id={`nutri-${key}`}
               type="number"
-              inputMode="tel"
+              inputMode="decimal"
               step={step}
               value={values[key] || ""}
               onChange={(e) => onChange(key, parseFloat(e.target.value) || 0)}
