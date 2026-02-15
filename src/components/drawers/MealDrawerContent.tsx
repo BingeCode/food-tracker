@@ -379,7 +379,7 @@ export function MealDrawerContent() {
               <span className="font-semibold text-foreground">
                 {Math.round(totals.protein)}g
               </span>{" "}
-              Prot
+              P
             </div>
             <div>
               <span className="font-semibold text-foreground">

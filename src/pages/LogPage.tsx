@@ -119,7 +119,7 @@ export function LogPage() {
                     <span className="font-semibold text-foreground">
                       {Math.round(meal.nutrition.protein)}g
                     </span>{" "}
-                    Prot
+                    P
                   </div>
                   <div>
                     <span className="font-semibold text-foreground">

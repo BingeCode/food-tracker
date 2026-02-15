@@ -125,20 +125,33 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   openMealDrawer: (mode, editId, date) =>
     set((state) => ({
-      mealDraft: {
-        ...state.mealDraft,
-        open: true,
-        mode,
-        editId,
-        ...(date ? { date } : {}),
-        // Reset time to now when creating new
-        ...(mode === "create" && !editId ? { time: getTimeNow() } : {}),
-      },
+      mealDraft:
+        mode === "edit"
+          ? {
+              ...defaultMealDraft,
+              open: true,
+              mode,
+              editId,
+              ...(date ? { date } : {}),
+            }
+          : {
+              ...state.mealDraft,
+              ...defaultMealDraft,
+              ...state.mealDraft,
+              open: true,
+              mode,
+              editId: undefined,
+              ...(date ? { date } : {}),
+              time: getTimeNow(),
+            },
     })),
 
   closeMealDrawer: () =>
     set((state) => ({
-      mealDraft: { ...state.mealDraft, open: false },
+      mealDraft:
+        state.mealDraft.mode === "edit"
+          ? { ...defaultMealDraft, time: getTimeNow() }
+          : { ...state.mealDraft, open: false },
     })),
 
   updateMealDraft: (partial) =>
@@ -184,12 +197,25 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   openRecipeDrawer: (mode, editId) =>
     set((state) => ({
-      recipeDraft: { ...state.recipeDraft, open: true, mode, editId },
+      recipeDraft:
+        mode === "edit"
+          ? { ...defaultRecipeDraft, open: true, mode, editId }
+          : {
+              ...state.recipeDraft,
+              ...defaultRecipeDraft,
+              ...state.recipeDraft,
+              open: true,
+              mode,
+              editId: undefined,
+            },
     })),
 
   closeRecipeDrawer: () =>
     set((state) => ({
-      recipeDraft: { ...state.recipeDraft, open: false },
+      recipeDraft:
+        state.recipeDraft.mode === "edit"
+          ? { ...defaultRecipeDraft }
+          : { ...state.recipeDraft, open: false },
     })),
 
   updateRecipeDraft: (partial) =>
@@ -234,12 +260,25 @@ export const useDrawerStore = create<DrawerStore>((set) => ({
 
   openIngredientDrawer: (mode, editId) =>
     set((state) => ({
-      ingredientDraft: { ...state.ingredientDraft, open: true, mode, editId },
+      ingredientDraft:
+        mode === "edit"
+          ? { ...defaultIngredientDraft, open: true, mode, editId }
+          : {
+              ...state.ingredientDraft,
+              ...defaultIngredientDraft,
+              ...state.ingredientDraft,
+              open: true,
+              mode,
+              editId: undefined,
+            },
     })),
 
   closeIngredientDrawer: () =>
     set((state) => ({
-      ingredientDraft: { ...state.ingredientDraft, open: false },
+      ingredientDraft:
+        state.ingredientDraft.mode === "edit"
+          ? { ...defaultIngredientDraft }
+          : { ...state.ingredientDraft, open: false },
     })),
 
   updateIngredientDraft: (partial) =>
