@@ -24,7 +24,8 @@ function isGreen(nx, ny) {
   // 3 tines
   for (let i = -1; i <= 1; i++) {
     const tx = forkX + i * tineSpacing;
-    if (Math.abs(nx - tx) <= tineW && ny >= tineTop && ny <= tineBot) return true;
+    if (Math.abs(nx - tx) <= tineW && ny >= tineTop && ny <= tineBot)
+      return true;
   }
   // Tine caps (rounded tops)
   for (let i = -1; i <= 1; i++) {
@@ -51,9 +52,11 @@ function isGreen(nx, ny) {
   const handleW = 9;
   const handleTop = neckBot;
   const handleBot = 130;
-  if (Math.abs(nx - forkX) <= handleW && ny >= handleTop && ny <= handleBot) return true;
+  if (Math.abs(nx - forkX) <= handleW && ny >= handleTop && ny <= handleBot)
+    return true;
   // Handle end cap
-  if ((nx - forkX) ** 2 + (ny - handleBot) ** 2 <= handleW * handleW) return true;
+  if ((nx - forkX) ** 2 + (ny - handleBot) ** 2 <= handleW * handleW)
+    return true;
 
   // ── Knife (right, centred at nx = 50) ──
   const knifeX = 50;
@@ -63,7 +66,8 @@ function isGreen(nx, ny) {
   const bladeMinW = 3; // half-width at tip
 
   // Blade tip (rounded)
-  if ((nx - knifeX) ** 2 + (ny - bladeTop) ** 2 <= bladeMinW * bladeMinW) return true;
+  if ((nx - knifeX) ** 2 + (ny - bladeTop) ** 2 <= bladeMinW * bladeMinW)
+    return true;
 
   // Blade body (tapers from tip to base)
   if (ny >= bladeTop && ny <= bladeBot) {
@@ -74,15 +78,21 @@ function isGreen(nx, ny) {
   }
   // Bolster
   const bolsterBot = bladeBot + 14;
-  if (ny >= bladeBot && ny <= bolsterBot && Math.abs(nx - knifeX) <= bladeMaxW * 0.7)
+  if (
+    ny >= bladeBot &&
+    ny <= bolsterBot &&
+    Math.abs(nx - knifeX) <= bladeMaxW * 0.7
+  )
     return true;
   // Handle
   const kHandleTop = bolsterBot;
   const kHandleBot = 130;
   const kHandleW = 9;
-  if (Math.abs(nx - knifeX) <= kHandleW && ny >= kHandleTop && ny <= kHandleBot) return true;
+  if (Math.abs(nx - knifeX) <= kHandleW && ny >= kHandleTop && ny <= kHandleBot)
+    return true;
   // Handle end cap
-  if ((nx - knifeX) ** 2 + (ny - kHandleBot) ** 2 <= kHandleW * kHandleW) return true;
+  if ((nx - knifeX) ** 2 + (ny - kHandleBot) ** 2 <= kHandleW * kHandleW)
+    return true;
 
   return false;
 }
