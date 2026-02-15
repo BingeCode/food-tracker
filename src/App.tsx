@@ -22,6 +22,7 @@ function AppShell() {
   return (
     <div className="h-dvh w-full flex flex-col overflow-hidden bg-background text-foreground antialiased font-sans">
       <main
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
         className={`relative p-4 flex-1 min-h-0 flex flex-col gap-3 ${
           isEditorPage ? "pb-0" : "pb-20"
         }`}>
