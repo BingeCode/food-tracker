@@ -34,7 +34,7 @@ export function DateNavigator({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-4 py-2 bg-background/95 backdrop-blur z-40 supports-backdrop-filter:bg-background/60",
+        "flex items-center justify-between bg-background/95 backdrop-blur z-40 supports-backdrop-filter:bg-background/60",
         className,
       )}>
       <Button variant="ghost" size="icon" onClick={prevDate}>

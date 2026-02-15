@@ -54,6 +54,17 @@ export function RecipesIngredientsPage() {
       <div className="flex-1 overflow-y-auto p-4 pb-20">
         {activeTab === "recipes" && (
           <div className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full h-auto py-3 justify-start"
+              onClick={() => {
+                openRecipeDrawer("create");
+                navigateTo("/recipe");
+              }}>
+              <Plus className="h-4 w-4" />
+              Rezept hinzufügen
+            </Button>
+
             {recipes?.map((recipe) => (
               <div
                 key={recipe.id}
@@ -84,6 +95,17 @@ export function RecipesIngredientsPage() {
 
         {activeTab === "ingredients" && (
           <div className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full h-auto py-3 justify-start"
+              onClick={() => {
+                openIngredientDrawer("create");
+                navigateTo("/ingredient");
+              }}>
+              <Plus className="h-4 w-4" />
+              Zutat hinzufügen
+            </Button>
+
             {ingredients?.map((ing) => (
               <div
                 key={ing.id}
@@ -110,25 +132,6 @@ export function RecipesIngredientsPage() {
             )}
           </div>
         )}
-      </div>
-
-      {/* FAB */}
-      <div className="absolute right-6 bottom-24 z-40">
-        <Button
-          size="icon"
-          className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
-          onClick={() => {
-            if (activeTab === "recipes") {
-              openRecipeDrawer("create");
-              navigateTo("/recipe");
-              return;
-            }
-
-            openIngredientDrawer("create");
-            navigateTo("/ingredient");
-          }}>
-          <Plus className="h-6 w-6" />
-        </Button>
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ function AppShell() {
 
   return (
     <div className="h-dvh w-full flex flex-col overflow-hidden bg-background text-foreground antialiased font-sans">
-      <main className="flex-1 overflow-hidden relative">
+      <main className="relative p-4 pb-20 flex-1 flex flex-col gap-3">
         <Routes>
           <Route path="/" element={<Navigate to="/log" replace />} />
           <Route path="/log" element={<LogPage />} />

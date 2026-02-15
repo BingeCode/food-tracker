@@ -62,115 +62,103 @@ export function LogPage() {
   }, [meals]);
 
   return (
-    <div className="flex flex-col h-full bg-background relative">
-      {/* 1. Date Navigation */}
-      <DateNavigator date={date} onChange={setDate} className="shrink-0" />
-
-      {/* 2. Scrollable Content */}
-      <div className="flex-1 overflow-y-auto pb-20">
-        {/* Nutrition Summary Card */}
-        <div className="p-4 bg-muted/30">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">
-              Tagesübersicht
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={() => {
-                openGoalsDrawer(date);
-                navigateTo("/goals");
-              }}>
-              <Target className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="rounded-xl border bg-card p-4 shadow-sm">
-            <NutritionSummary current={totals} goals={goals ?? fallbackGoals} />
-          </div>
-        </div>
-
-        {/* Meals List */}
-        <div className="px-4 py-2 space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground pl-1">
-            Mahlzeiten
+    <>
+      <div>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-sm text-muted-foreground">
+            Tagesübersicht
           </h3>
-
-          <div className="space-y-3">
-            {meals?.map((meal) => (
-              <div
-                key={meal.id}
-                className="group rounded-lg border bg-card p-3 shadow-sm hover:shadow-md transition-all active:scale-[0.99]"
-                onClick={() => {
-                  openMealDrawer("edit", meal.id);
-                  navigateTo("/meal");
-                }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground/80">
-                      {meal.time}
-                    </span>
-                    <span className="text-sm font-medium">{meal.name}</span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-                </div>
-
-                {/* Meal Mini Summary */}
-                <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
-                  <div>
-                    <span className="font-semibold text-foreground">
-                      {Math.round(meal.nutrition.calories)}
-                    </span>{" "}
-                    kcal
-                  </div>
-                  <div>
-                    <span className="font-semibold text-foreground">
-                      {Math.round(meal.nutrition.protein)}g
-                    </span>{" "}
-                    P
-                  </div>
-                  <div>
-                    <span className="font-semibold text-foreground">
-                      {Math.round(meal.nutrition.carbs)}g
-                    </span>{" "}
-                    KH
-                  </div>
-                  <div>
-                    <span className="font-semibold text-foreground">
-                      {Math.round(meal.nutrition.fat)}g
-                    </span>{" "}
-                    Fett
-                  </div>
-                </div>
-
-                {/* Items preview (optional) */}
-                <div className="mt-2 pt-2 border-t border-dashed text-xs text-muted-foreground line-clamp-1">
-                  {meal.items.map((i) => i.manualName || "Zutat").join(", ")}
-                </div>
-              </div>
-            ))}
-
-            {(!meals || meals.length === 0) && (
-              <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">
-                Noch keine Mahlzeiten für heute.
-              </div>
-            )}
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={() => {
+              openGoalsDrawer(date);
+              navigateTo("/goals");
+            }}>
+            <Target className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="rounded-xl border bg-card shadow-sm">
+          <NutritionSummary current={totals} goals={goals ?? fallbackGoals} />
         </div>
       </div>
+      <div className="flex-1">
+        <h3 className="font-semibold text-sm text-muted-foreground pl-1">
+          Mahlzeiten
+        </h3>
 
-      {/* Floating Action Button (FAB) */}
-      <div className="absolute right-6 bottom-24 z-40">
-        <Button
-          size="icon"
-          className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
-          onClick={() => {
-            openMealDrawer("create", undefined, date);
-            navigateTo("/meal");
-          }}>
-          <Plus className="h-6 w-6" />
-        </Button>
+        <div className="space-y-3">
+          {meals?.map((meal) => (
+            <div
+              key={meal.id}
+              className="group rounded-lg border bg-card p-3 shadow-sm hover:shadow-md transition-all active:scale-[0.99]"
+              onClick={() => {
+                openMealDrawer("edit", meal.id);
+                navigateTo("/meal");
+              }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground/80">
+                    {meal.time}
+                  </span>
+                  <span className="text-sm font-medium">{meal.name}</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+                <div>
+                  <span className="font-semibold text-foreground">
+                    {Math.round(meal.nutrition.calories)}
+                  </span>{" "}
+                  kcal
+                </div>
+                <div>
+                  <span className="font-semibold text-foreground">
+                    {Math.round(meal.nutrition.protein)}g
+                  </span>{" "}
+                  P
+                </div>
+                <div>
+                  <span className="font-semibold text-foreground">
+                    {Math.round(meal.nutrition.carbs)}g
+                  </span>{" "}
+                  KH
+                </div>
+                <div>
+                  <span className="font-semibold text-foreground">
+                    {Math.round(meal.nutrition.fat)}g
+                  </span>{" "}
+                  Fett
+                </div>
+              </div>
+
+              <div className="mt-2 pt-2 border-t border-dashed text-xs text-muted-foreground line-clamp-1">
+                {meal.items.map((i) => i.manualName || "Zutat").join(", ")}
+              </div>
+            </div>
+          ))}
+
+          {(!meals || meals.length === 0) && (
+            <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">
+              Noch keine Mahlzeiten für heute.
+            </div>
+          )}
+
+          <Button
+            variant="outline"
+            className="w-full h-auto py-3 justify-start"
+            onClick={() => {
+              openMealDrawer("create", undefined, date);
+              navigateTo("/meal");
+            }}>
+            <Plus className="h-4 w-4" />
+            Mahlzeit hinzufügen
+          </Button>
+        </div>
       </div>
-    </div>
+      <DateNavigator date={date} onChange={setDate} className="shrink-0" />
+    </>
   );
 }

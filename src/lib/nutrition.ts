@@ -44,31 +44,15 @@ export async function calculateMealItemNutrition(
 export async function calculateDraftItemNutrition(
   item: MealItemDraft,
 ): Promise<NutritionValues> {
-  if (item.ingredientId) {
-    const ingredient = await db.ingredients.get(item.ingredientId);
-    if (!ingredient) return zeroNutrition();
-
-    const factor = item.amount / 100;
-    return {
-      calories: ingredient.calories * factor,
-      fat: ingredient.fat * factor,
-      carbs: ingredient.carbs * factor,
-      sugar: ingredient.sugar * factor,
-      protein: ingredient.protein * factor,
-      salt: ingredient.salt * factor,
-      fiber: ingredient.fiber * factor,
-    };
-  }
-
-  // Manual draft item
+  const factor = item.amount / 100;
   return {
-    calories: item.manualCalories ?? 0,
-    fat: item.manualFat ?? 0,
-    carbs: item.manualCarbs ?? 0,
-    sugar: item.manualSugar ?? 0,
-    protein: item.manualProtein ?? 0,
-    salt: item.manualSalt ?? 0,
-    fiber: item.manualFiber ?? 0,
+    calories: item.caloriesPer100 * factor,
+    fat: item.fatPer100 * factor,
+    carbs: item.carbsPer100 * factor,
+    sugar: item.sugarPer100 * factor,
+    protein: item.proteinPer100 * factor,
+    salt: item.saltPer100 * factor,
+    fiber: item.fiberPer100 * factor,
   };
 }
 

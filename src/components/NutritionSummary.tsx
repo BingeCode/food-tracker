@@ -29,19 +29,19 @@ export function NutritionSummary({ current, goals }: NutritionSummaryProps) {
           <span className="font-medium text-foreground">
             {formatCompact(current.fat, goals.fat)}
           </span>
-          <span className="ml-[1px]">F</span>
+          <span className="ml-px">F</span>
         </div>
         <div>
           <span className="font-medium text-foreground">
             {formatCompact(current.carbs, goals.carbs)}
           </span>
-          <span className="ml-[1px]">KH</span>
+          <span className="ml-px">KH</span>
         </div>
         <div>
           <span className="font-medium text-foreground">
             {formatCompact(current.protein, goals.protein)}
           </span>
-          <span className="ml-[1px]">P</span>
+          <span className="ml-px">P</span>
         </div>
       </div>
     </button>

@@ -30,7 +30,7 @@ export function IngredientSearch({
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
-          placeholder="Weitere Zutat hinzufügen..."
+          placeholder="Zutat hinzufügen..."
           className="pl-9"
           value={term}
           onChange={(e) => setTerm(e.target.value)}

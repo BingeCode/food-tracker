@@ -51,6 +51,7 @@ export interface MealItem {
   mealId: number;
   ingredientId?: number;
   amount: number;
+  sourceRecipeName?: string;
   // Manual entry fields (used when isManual or no ingredientId)
   manualName?: string;
   manualCalories?: number;
@@ -106,6 +107,7 @@ export interface MealItemDraft {
   name: string;
   amount: number;
   unit: "g" | "ml";
+  sourceRecipeName?: string;
 
   // Nutrition values per 100 units (snapshot from ingredient or manual input)
   caloriesPer100: number;

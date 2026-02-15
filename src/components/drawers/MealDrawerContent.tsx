@@ -4,12 +4,19 @@ import { useDrawerStore } from "@/stores/drawer-store";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, Scan, Save, Trash2, X } from "lucide-react";
-import type { MealItemDraft, Ingredient, Meal, MealItem } from "@/types";
+import { ArrowLeft, Save, Trash2, X, Scan } from "lucide-react";
+import type {
+  MealItemDraft,
+  Ingredient,
+  Meal,
+  MealItem,
+  Recipe,
+} from "@/types";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { fetchProductByBarcode } from "@/lib/openfoodfacts";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
+import { useRecipes } from "@/hooks/useMeals";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +42,11 @@ export function MealDrawerContent() {
   const { navigateBack } = useViewTransitionNavigate();
   const [isScanning, setIsScanning] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isRecipeSearchFocused, setIsRecipeSearchFocused] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const recipeQuery = searchTerm.trim().length > 1 ? searchTerm : undefined;
+  const recipes = useRecipes(recipeQuery);
 
   // Load meal data if in edit mode
   useEffect(() => {
@@ -56,6 +68,7 @@ export function MealDrawerContent() {
                   ingredientId: ing.id,
                   name: ing.name,
                   amount: item.amount,
+                  sourceRecipeName: item.sourceRecipeName,
                   unit: ing.unit,
                   caloriesPer100: ing.calories,
                   fatPer100: ing.fat,
@@ -115,6 +128,54 @@ export function MealDrawerContent() {
     addMealItem(newItem);
   };
 
+  const handleSelectRecipe = async (recipe: Recipe) => {
+    if (!recipe.id) return;
+
+    const recipeItems = await db.recipeIngredients
+      .where("recipeId")
+      .equals(recipe.id)
+      .toArray();
+
+    const ingredientMap = new Map<number, Ingredient>();
+    const ingredientIds = Array.from(
+      new Set(recipeItems.map((item) => item.ingredientId)),
+    );
+
+    for (const ingredientId of ingredientIds) {
+      const ingredient = await db.ingredients.get(ingredientId);
+      if (ingredient?.id) {
+        ingredientMap.set(ingredient.id, ingredient);
+      }
+    }
+
+    const draftItems: MealItemDraft[] = [];
+    for (const item of recipeItems) {
+      const ingredient = ingredientMap.get(item.ingredientId);
+      if (!ingredient || ingredient.id === undefined) {
+        continue;
+      }
+
+      draftItems.push({
+        ingredientId: ingredient.id,
+        name: ingredient.name,
+        amount: item.amount,
+        sourceRecipeName: recipe.name,
+        unit: ingredient.unit,
+        caloriesPer100: ingredient.calories,
+        fatPer100: ingredient.fat,
+        carbsPer100: ingredient.carbs,
+        sugarPer100: ingredient.sugar,
+        proteinPer100: ingredient.protein,
+        saltPer100: ingredient.salt,
+        fiberPer100: ingredient.fiber,
+      });
+    }
+
+    updateMealDraft({ items: [...items, ...draftItems] });
+    setSearchTerm("");
+    setIsRecipeSearchFocused(false);
+  };
+
   const handleScan = async (code: string) => {
     setIsScanning(false);
     // 1. Search local DB for barcode
@@ -153,10 +214,23 @@ export function MealDrawerContent() {
     if (items.length === 0) return;
 
     try {
+      const recipeNames = Array.from(
+        new Set(items.map((item) => item.sourceRecipeName).filter(Boolean)),
+      ) as string[];
+      const ingredientNames = Array.from(
+        new Set(items.map((item) => item.name).filter(Boolean)),
+      );
+      const mealName =
+        recipeNames.length > 0
+          ? recipeNames.join(", ")
+          : ingredientNames.length > 0
+            ? ingredientNames.join(", ")
+            : "Mahlzeit";
+
       const mealData: Omit<Meal, "id" | "createdAt"> = {
         date,
         time,
-        name: "Mahlzeit",
+        name: mealName,
         isManual: false,
         updatedAt: new Date(),
       };
@@ -188,6 +262,7 @@ export function MealDrawerContent() {
           mealId: currentMealId!,
           ingredientId: item.ingredientId,
           amount: item.amount,
+          sourceRecipeName: item.sourceRecipeName,
           manualName: item.ingredientId ? undefined : item.name,
           manualCalories: item.ingredientId
             ? undefined
@@ -274,6 +349,42 @@ export function MealDrawerContent() {
     );
   }, [items]);
 
+  const groupedItems = useMemo(() => {
+    const recipeGroups = new Map<
+      string,
+      Array<{ item: MealItemDraft; index: number }>
+    >();
+    const otherItems: Array<{ item: MealItemDraft; index: number }> = [];
+
+    items.forEach((item, index) => {
+      if (item.sourceRecipeName) {
+        const existing = recipeGroups.get(item.sourceRecipeName) ?? [];
+        recipeGroups.set(item.sourceRecipeName, [...existing, { item, index }]);
+        return;
+      }
+
+      otherItems.push({ item, index });
+    });
+
+    const sections: Array<{
+      label?: string;
+      entries: Array<{ item: MealItemDraft; index: number }>;
+    }> = [];
+
+    recipeGroups.forEach((entries, recipeName) => {
+      sections.push({ label: recipeName, entries });
+    });
+
+    if (otherItems.length > 0) {
+      sections.push({
+        label: sections.length > 0 ? "Weitere Zutaten" : undefined,
+        entries: otherItems,
+      });
+    }
+
+    return sections;
+  }, [items]);
+
   return (
     <div className="h-full w-full bg-background flex flex-col">
       <div className="mx-auto w-full max-w-md flex flex-col h-full bg-background overflow-hidden">
@@ -308,68 +419,118 @@ export function MealDrawerContent() {
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col relative">
-          {/* Add Item Section */}
+          {/* Add Recipe Section */}
           <div className="p-4 border-b bg-card shrink-0 z-10">
-            <div className="flex gap-2 mb-2">
-              <IngredientSearch
-                onSelect={handleSelectIngredient}
-                className="flex-1"
+            <div className="relative">
+              <Input
+                type="search"
+                placeholder="Rezept hinzufügen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setIsRecipeSearchFocused(true)}
+                onBlur={() => {
+                  setTimeout(() => setIsRecipeSearchFocused(false), 200);
+                }}
               />
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => setIsScanning(true)}>
-                <Scan className="h-4 w-4" />
-              </Button>
+
+              <div className="flex gap-2 mt-2">
+                <IngredientSearch
+                  onSelect={handleSelectIngredient}
+                  className="flex-1"
+                />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setIsScanning(true)}>
+                  <Scan className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {isRecipeSearchFocused && searchTerm.trim().length > 1 ? (
+                <div className="absolute top-full left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-background border rounded-md shadow-lg z-50">
+                  {!recipes || recipes.length === 0 ? (
+                    <div className="p-3 text-sm text-muted-foreground">
+                      Keine Rezepte gefunden.
+                    </div>
+                  ) : (
+                    recipes.slice(0, 8).map((recipe) => (
+                      <button
+                        key={recipe.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 border-b last:border-b-0 hover:bg-muted/40"
+                        onClick={() => void handleSelectRecipe(recipe)}>
+                        <div className="text-sm font-medium">{recipe.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {recipe.servings}{" "}
+                          {recipe.servings === 1 ? "Portion" : "Portionen"}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
 
           {/* Items List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm">
+              <div className="flex flex-col flex-1 items-center justify-center h-40 text-muted-foreground text-sm">
                 <p>Noch keine Lebensmittel hinzugefügt.</p>
-                <p>Suche oder scanne eine Zutat.</p>
+                <p>Füge ein Rezept hinzu oder ergänze einzelne Zutaten.</p>
               </div>
             ) : (
-              items.map((item, index) => (
+              groupedItems.map((section, sectionIndex) => (
                 <div
-                  key={index}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
-                  <div className="flex-1 overflow-hidden">
-                    <div className="font-medium text-sm truncate">
-                      {item.name}
+                  key={`${section.label ?? "items"}-${sectionIndex}`}
+                  className="space-y-2">
+                  {section.label ? (
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-1">
+                      {section.label}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round(item.caloriesPer100)} kcal / 100{item.unit}
-                    </div>
-                  </div>
+                  ) : null}
 
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-24">
-                      <Input
-                        type="number"
-                        inputMode="tel"
-                        value={item.amount || ""}
-                        onChange={(e) =>
-                          updateMealItem(index, {
-                            amount: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        className="h-8 pr-8 text-right bg-background"
-                      />
-                      <span className="absolute right-3 top-2 text-xs text-muted-foreground">
-                        {item.unit}
-                      </span>
+                  {section.entries.map(({ item, index }) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
+                      <div className="flex-1 overflow-hidden">
+                        <div className="font-medium text-sm truncate">
+                          {item.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {Math.round(item.caloriesPer100)} kcal / 100
+                          {item.unit}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="relative w-24">
+                          <Input
+                            type="number"
+                            inputMode="tel"
+                            value={item.amount || ""}
+                            onChange={(e) =>
+                              updateMealItem(index, {
+                                amount: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            className="h-8 pr-8 text-right bg-background"
+                          />
+                          <span className="absolute right-3 top-2 text-xs text-muted-foreground">
+                            {item.unit}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => removeMealItem(index)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => removeMealItem(index)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
               ))
             )}
