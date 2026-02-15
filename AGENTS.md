@@ -7,20 +7,20 @@
 
 ## Tech Stack
 
-| Layer        | Technology                                       |
-| ------------ | ------------------------------------------------ |
-| Framework    | React 19 + TypeScript 5.9                        |
-| Build        | Vite 7 + `@vitejs/plugin-react-swc`              |
-| PWA          | `vite-plugin-pwa` (`registerType: "autoUpdate"`) |
-| Routing      | `react-router-dom` v7, HashRouter                |
-| State        | Local `useState` + `useSearchParams` (no store)  |
+| Layer        | Technology                                            |
+| ------------ | ----------------------------------------------------- |
+| Framework    | React 19 + TypeScript 5.9                             |
+| Build        | Vite 7 + `@vitejs/plugin-react-swc`                   |
+| PWA          | `vite-plugin-pwa` (`registerType: "autoUpdate"`)      |
+| Routing      | `react-router-dom` v7, HashRouter                     |
+| State        | Local `useState` + `useSearchParams` (no store)       |
 | Database     | Dexie 4 (IndexedDB), v1 schema (fresh, no migrations) |
-| Styling      | Tailwind CSS 4 + shadcn/ui + `tw-animate-css`    |
-| Icons        | Lucide React                                     |
-| Dates        | date-fns (German locale)                         |
-| Barcode      | html5-qrcode                                     |
-| Product Data | OpenFoodFacts API                                |
-| HTTPS (dev)  | `vite-plugin-mkcert`                             |
+| Styling      | Tailwind CSS 4 + shadcn/ui + `tw-animate-css`         |
+| Icons        | Lucide React                                          |
+| Dates        | date-fns (German locale)                              |
+| Barcode      | html5-qrcode                                          |
+| Product Data | OpenFoodFacts API                                     |
+| HTTPS (dev)  | `vite-plugin-mkcert`                                  |
 
 ---
 
@@ -113,15 +113,15 @@ src/
 > **No sourceRecipe\*** — recipes are used only to instantiate items; no persistent link.
 
 **`dailyGoals`** — Single row with global nutrition targets.
-| Field      | Type   | Notes                         |
+| Field | Type | Notes |
 | ---------- | ------ | ----------------------------- |
-| calories   | number | kcal target                   |
-| fatPct     | number | % of calories from fat        |
-| carbsPct   | number | % of calories from carbs      |
-| proteinPct | number | % of calories from protein    |
-| sugar      | number | grams                         |
-| salt       | number | grams                         |
-| fiber      | number | grams                         |
+| calories | number | kcal target |
+| fatPct | number | % of calories from fat |
+| carbsPct | number | % of calories from carbs |
+| proteinPct | number | % of calories from protein |
+| sugar | number | grams |
+| salt | number | grams |
+| fiber | number | grams |
 
 > Gram values for fat/carbs/protein are computed at display time:
 > `grams = calories × pct / 100 / caloriesPerGram` (fat=9, carbs=4, protein=4).
@@ -176,11 +176,11 @@ Editor pages read mode/context from `useSearchParams()`:
 
 ### Dexie Live Query Hooks (`useMeals.ts`)
 
-| Hook             | Returns               | Used by                                  |
-| ---------------- | --------------------- | ---------------------------------------- |
-| `useMealsByDate` | `MealWithNutrition[]` | LogsPage                                 |
-| `useIngredients` | `Ingredient[]`        | IngredientSearch, RecipesIngredientsPage |
-| `useRecipes`     | `Recipe[]`            | MealsPage, RecipesIngredientsPage        |
+| Hook             | Returns                   | Used by                                  |
+| ---------------- | ------------------------- | ---------------------------------------- |
+| `useMealsByDate` | `MealWithNutrition[]`     | LogsPage                                 |
+| `useIngredients` | `Ingredient[]`            | IngredientSearch, RecipesIngredientsPage |
+| `useRecipes`     | `Recipe[]`                | MealsPage, RecipesIngredientsPage        |
 | `useDailyGoals`  | `DailyGoals \| undefined` | LogsPage                                 |
 
 `MealWithNutrition` includes `items: MealIngredientWithName[]` where ingredient names are resolved via DB join.

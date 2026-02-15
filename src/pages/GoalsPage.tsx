@@ -129,9 +129,7 @@ export function GoalsPage() {
                 type="number"
                 inputMode="tel"
                 value={proteinPct}
-                onChange={(e) =>
-                  setProteinPct(parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => setProteinPct(parseFloat(e.target.value) || 0)}
               />
               <p className="text-xs text-muted-foreground tabular-nums">
                 = {proteinGrams}g

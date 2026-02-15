@@ -72,10 +72,7 @@ export function LogsPage() {
           </h3>
         </div>
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <NutritionSummary
-            current={totals}
-            goals={goals}
-          />
+          <NutritionSummary current={totals} goals={goals} />
         </div>
       </div>
       <div className="flex-1 min-h-0 flex flex-col">

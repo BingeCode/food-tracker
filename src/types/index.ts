@@ -65,13 +65,13 @@ export interface MealIngredient {
 
 export interface DailyGoals {
   id: number;
-  calories: number;    // kcal target
-  fatPct: number;      // % of calories from fat
-  carbsPct: number;    // % of calories from carbs
-  proteinPct: number;  // % of calories from protein
-  sugar: number;       // grams
-  salt: number;        // grams
-  fiber: number;       // grams
+  calories: number; // kcal target
+  fatPct: number; // % of calories from fat
+  carbsPct: number; // % of calories from carbs
+  proteinPct: number; // % of calories from protein
+  sugar: number; // grams
+  salt: number; // grams
+  fiber: number; // grams
 }
 
 // ── Nutrition values (computed) ─────────────────────────────

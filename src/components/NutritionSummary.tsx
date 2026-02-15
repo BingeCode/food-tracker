@@ -7,10 +7,7 @@ interface NutritionSummaryProps {
   goals: NutritionValues;
 }
 
-export function NutritionSummary({
-  current,
-  goals,
-}: NutritionSummaryProps) {
+export function NutritionSummary({ current, goals }: NutritionSummaryProps) {
   const { navigateTo } = useViewTransitionNavigate();
 
   return (
