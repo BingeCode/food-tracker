@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useRecipes, useIngredients } from "@/hooks/useMeals";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,8 +8,13 @@ import { Plus, Search, ChefHat, Carrot, Edit2, X } from "lucide-react";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 export function RecipesIngredientsPage() {
-  const [activeTab, setActiveTab] = useState("recipes");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "ingredients" ? "ingredients" : "recipes";
   const [searchTerm, setSearchTerm] = useState("");
+
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab }, { replace: true });
+  };
 
   const recipes = useRecipes(activeTab === "recipes" ? searchTerm : undefined);
   const ingredients = useIngredients(
