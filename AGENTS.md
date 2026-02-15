@@ -28,35 +28,53 @@
 
 ```
 src/
-├── App.tsx                         # HashRouter, AppShell, route definitions
-├── main.tsx                        # React root, DB seed call
-├── index.css                       # Tailwind base + theme tokens
-├── types/index.ts                  # All TypeScript interfaces
-├── lib/
-│   ├── db.ts                       # Dexie DB class, v1→v2 migration, seedDefaults()
-│   ├── nutrition.ts                # Nutrition calculation helpers
-│   ├── openfoodfacts.ts            # OpenFoodFacts barcode lookup
-│   └── utils.ts                    # cn() utility (clsx + tailwind-merge)
-├── stores/
-│   └── drawer-store.ts             # Zustand store: all editor drafts + actions
-├── hooks/
-│   └── useMeals.ts                 # Dexie useLiveQuery hooks
-├── pages/
-│   ├── LogPage.tsx                 # Daily meal log + nutrition summary
-│   └── RecipesIngredientsPage.tsx  # Recipe & ingredient library (tabs)
-├── components/
-│   ├── AppFooter.tsx               # Bottom nav bar (Tagebuch / Bibliothek)
-│   ├── DateNavigator.tsx           # Date picker with prev/next arrows
-│   ├── IngredientSearch.tsx        # Reusable ingredient dropdown search
-│   ├── NutritionInputFields.tsx    # Reusable nutrition input grid
-│   ├── NutritionSummary.tsx        # Compact kcal/fat/carbs/protein bar
-│   ├── BarcodeScanner.tsx          # html5-qrcode camera scanner
-│   ├── drawers/                    # Full-page editor components
-│   │   ├── MealDrawerContent.tsx           # Meal create/edit
-│   │   ├── RecipeDrawerContent.tsx         # Recipe create/edit
-│   │   ├── IngredientDrawerContent.tsx     # Ingredient create/edit
-│   │   └── GoalsDrawerContent.tsx          # Daily goals editor
-│   └── ui/                         # shadcn/ui primitives
+├── App.tsx
+├── assets
+├── components
+│   ├── AppFooter.tsx
+│   ├── BarcodeScanner.tsx
+│   ├── DateNavigator.tsx
+│   ├── IngredientSearch.tsx
+│   ├── NutritionInputFields.tsx
+│   ├── NutritionSummary.tsx
+│   └── ui
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── checkbox.tsx
+│       ├── dialog.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── popover.tsx
+│       ├── progress.tsx
+│       ├── select.tsx
+│       ├── separator.tsx
+│       ├── sonner.tsx
+│       ├── switch.tsx
+│       ├── tabs.tsx
+│       └── textarea.tsx
+├── hooks
+│   ├── useMeals.ts
+│   ├── useOnlineStatus.ts
+│   └── useViewTransitionNavigate.ts
+├── index.css
+├── lib
+│   ├── db.ts
+│   ├── nutrition.ts
+│   ├── openfoodfacts.ts
+│   └── utils.ts
+├── main.tsx
+├── pages
+│   ├── GoalsPage.tsx
+│   ├── IngredientsPage.tsx
+│   ├── LogsPage.tsx
+│   ├── MealsPage.tsx
+│   ├── RecipesIngredientsPage.tsx
+│   └── RecipesPage.tsx
+├── stores
+│   └── draft-store.ts
+└── types
+    └── index.ts
 ```
 
 ---
@@ -270,9 +288,4 @@ Editor pages (`/meal`, `/recipe`, `/ingredient`, `/goals`) hide the bottom nav a
 
 ### Pending / Future
 
-- [ ] Rename drawer components out of `drawers/` directory
-- [ ] Rename store actions (drop "Drawer" suffix)
 - [ ] Export/import data (backup)
-- [ ] Meal duplication / quick-add from history
-- [ ] Favorite recipes / recent meals
-- [ ] Nutrition charts / trends over time
