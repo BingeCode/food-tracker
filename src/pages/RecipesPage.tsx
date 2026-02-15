@@ -89,8 +89,7 @@ export function RecipesPage() {
     }
   }, [mode, editId]);
 
-  const addItem = (item: DraftItem) =>
-    setItems((prev) => [...prev, item]);
+  const addItem = (item: DraftItem) => setItems((prev) => [...prev, item]);
   const removeItem = (index: number) =>
     setItems((prev) => prev.filter((_, i) => i !== index));
   const updateItemAmount = (index: number, amount: number) =>
@@ -177,13 +176,11 @@ export function RecipesPage() {
         });
       }
 
-      const itemsToSave: Omit<RecipeIngredient, "id">[] = items.map(
-        (item) => ({
-          recipeId: currentRecipeId!,
-          ingredientId: item.ingredientId,
-          amount: item.amount,
-        }),
-      );
+      const itemsToSave: Omit<RecipeIngredient, "id">[] = items.map((item) => ({
+        recipeId: currentRecipeId!,
+        ingredientId: item.ingredientId,
+        amount: item.amount,
+      }));
 
       await db.recipeIngredients.bulkAdd(itemsToSave);
       navigateBack();

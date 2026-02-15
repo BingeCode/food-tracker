@@ -67,61 +67,61 @@ src/
 ### Core Entities (Dexie tables)
 
 **`ingredients`** — Base food items with per-100g/ml nutrition.
-| Field          | Type           | Notes                        |
+| Field | Type | Notes |
 | -------------- | -------------- | ---------------------------- |
-| id             | number (auto)  | Primary key                  |
-| barcode?       | string         | EAN for OpenFoodFacts lookup |
-| name           | string         | Display name                 |
-| unit           | "g" \| "ml"    |                              |
-| calories…fiber | number         | All per 100 units            |
-| defaultServing | number         | Default amount in g/ml       |
-| createdAt      | Date           |                              |
-| updatedAt      | Date           | Used for sort order          |
+| id | number (auto) | Primary key |
+| barcode? | string | EAN for OpenFoodFacts lookup |
+| name | string | Display name |
+| unit | "g" \| "ml" | |
+| calories…fiber | number | All per 100 units |
+| defaultServing | number | Default amount in g/ml |
+| createdAt | Date | |
+| updatedAt | Date | Used for sort order |
 
 **`recipes`** — Named collections of ingredients with portion count.
-| Field    | Type          |
+| Field | Type |
 | -------- | ------------- |
-| id       | number (auto) |
-| name     | string        |
-| servings | number        |
+| id | number (auto) |
+| name | string |
+| servings | number |
 
 **`recipeIngredients`** — Join table: recipe → ingredient + amount.
-| Field        | Type   |
+| Field | Type |
 | ------------ | ------ |
-| recipeId     | number |
+| recipeId | number |
 | ingredientId | number |
-| amount       | number |
+| amount | number |
 
 **`meals`** — Logged meals tied to a date.
-| Field | Type   | Notes      |
+| Field | Type | Notes |
 | ----- | ------ | ---------- |
-| date  | string | YYYY-MM-DD |
-| time  | string | HH:mm      |
-| name  | string |            |
+| date | string | YYYY-MM-DD |
+| time | string | HH:mm |
+| name | string | |
 
 **`mealIngredients`** — Individual items within a meal. Every item **must** reference an ingredient. Stores a **nutrition snapshot** (per-100 values at save time) so historical data remains stable.
-| Field           | Type        | Notes                                  |
+| Field | Type | Notes |
 | --------------- | ----------- | -------------------------------------- |
-| id              | number      | Primary key                            |
-| mealId          | number      | FK to meals                            |
-| ingredientId    | number      | FK to ingredients (required)           |
-| amount          | number      | Actual amount in g/ml                  |
-| unit            | "g" \| "ml" |                                        |
-| calories…fiber  | number      | Nutrition per 100 units (snapshot)     |
+| id | number | Primary key |
+| mealId | number | FK to meals |
+| ingredientId | number | FK to ingredients (required) |
+| amount | number | Actual amount in g/ml |
+| unit | "g" \| "ml" | |
+| calories…fiber | number | Nutrition per 100 units (snapshot) |
 
 > **No name** — display name is derived from the referenced ingredient.
 > **No sourceRecipe\*** — recipes are used only to instantiate items; no persistent link.
 
 **`dailyGoals`** — Single row with default nutrition targets.
-| Field           | Type   |
+| Field | Type |
 | --------------- | ------ |
-| calories        | number |
-| fat             | number |
-| carbs           | number |
-| protein         | number |
-| sugar           | number |
-| salt            | number |
-| fiber           | number |
+| calories | number |
+| fat | number |
+| carbs | number |
+| protein | number |
+| sugar | number |
+| salt | number |
+| fiber | number |
 
 **`dailyGoalOverrides`** — Per-date overrides (unique on `date`).
 
@@ -178,12 +178,12 @@ Editor pages read mode/context from `useSearchParams()`:
 
 ### Dexie Live Query Hooks (`useMeals.ts`)
 
-| Hook             | Returns                      | Used by                                  |
-| ---------------- | ---------------------------- | ---------------------------------------- |
-| `useMealsByDate` | `MealWithNutrition[]`        | LogsPage                                |
-| `useIngredients` | `Ingredient[]`               | IngredientSearch, RecipesIngredientsPage |
-| `useRecipes`     | `Recipe[]`                   | MealsPage, RecipesIngredientsPage        |
-| `useDailyGoals`  | `NutritionValues`            | LogsPage                                |
+| Hook             | Returns               | Used by                                  |
+| ---------------- | --------------------- | ---------------------------------------- |
+| `useMealsByDate` | `MealWithNutrition[]` | LogsPage                                 |
+| `useIngredients` | `Ingredient[]`        | IngredientSearch, RecipesIngredientsPage |
+| `useRecipes`     | `Recipe[]`            | MealsPage, RecipesIngredientsPage        |
+| `useDailyGoals`  | `NutritionValues`     | LogsPage                                 |
 
 `MealWithNutrition` includes `items: MealIngredientWithName[]` where ingredient names are resolved via DB join.
 

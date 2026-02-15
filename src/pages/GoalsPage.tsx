@@ -64,7 +64,9 @@ export function GoalsPage() {
     }
 
     loadGoals();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [overrideDate]);
 
   const handleSave = async () => {

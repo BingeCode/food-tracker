@@ -98,8 +98,7 @@ export function MealsPage() {
     }
   }, [mode, editId]);
 
-  const addItem = (item: DraftItem) =>
-    setItems((prev) => [...prev, item]);
+  const addItem = (item: DraftItem) => setItems((prev) => [...prev, item]);
   const removeItem = (index: number) =>
     setItems((prev) => prev.filter((_, i) => i !== index));
   const updateItem = (index: number, partial: Partial<DraftItem>) =>
@@ -198,9 +197,7 @@ export function MealsPage() {
         new Set(items.map((item) => item.name).filter(Boolean)),
       );
       const mealName =
-        ingredientNames.length > 0
-          ? ingredientNames.join(", ")
-          : "Mahlzeit";
+        ingredientNames.length > 0 ? ingredientNames.join(", ") : "Mahlzeit";
 
       let currentMealId = editId;
 

@@ -1,6 +1,11 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
-import type { Meal, MealIngredient, Ingredient, NutritionValues } from "@/types";
+import type {
+  Meal,
+  MealIngredient,
+  Ingredient,
+  NutritionValues,
+} from "@/types";
 
 function calcNutrition(items: MealIngredient[]): NutritionValues {
   return items.reduce(
