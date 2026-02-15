@@ -125,7 +125,7 @@ export function LogPage() {
               </div>
 
               <div className="mt-2 pt-2 border-t border-dashed text-xs text-muted-foreground line-clamp-1">
-                {meal.items.map((i) => i.manualName || "Zutat").join(", ")}
+                {meal.items.map((i) => i.name || "Zutat").join(", ")}
               </div>
             </div>
           ))}

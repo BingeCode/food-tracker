@@ -3,37 +3,18 @@ import type { NutritionValues, MealItem, MealItemDraft } from "@/types";
 
 /**
  * Calculate nutrition values for a single meal item.
- * If ingredientId is set, values are computed from the ingredient's per-100g/ml data.
- * If manual values are set, those are used directly (they represent totals for the given amount).
+ * Uses the per-100 snapshot stored on the item.
  */
-export async function calculateMealItemNutrition(
-  item: MealItem,
-): Promise<NutritionValues> {
-  if (item.ingredientId) {
-    const ingredient = await db.ingredients.get(item.ingredientId);
-    if (!ingredient) return zeroNutrition();
-
-    const factor = item.amount / 100;
-    return {
-      calories: ingredient.calories * factor,
-      fat: ingredient.fat * factor,
-      carbs: ingredient.carbs * factor,
-      sugar: ingredient.sugar * factor,
-      protein: ingredient.protein * factor,
-      salt: ingredient.salt * factor,
-      fiber: ingredient.fiber * factor,
-    };
-  }
-
-  // Manual entry — values are absolute totals
+export function calculateMealItemNutrition(item: MealItem): NutritionValues {
+  const factor = item.amount / 100;
   return {
-    calories: item.manualCalories ?? 0,
-    fat: item.manualFat ?? 0,
-    carbs: item.manualCarbs ?? 0,
-    sugar: item.manualSugar ?? 0,
-    protein: item.manualProtein ?? 0,
-    salt: item.manualSalt ?? 0,
-    fiber: item.manualFiber ?? 0,
+    calories: (item.caloriesPer100 ?? 0) * factor,
+    fat: (item.fatPer100 ?? 0) * factor,
+    carbs: (item.carbsPer100 ?? 0) * factor,
+    sugar: (item.sugarPer100 ?? 0) * factor,
+    protein: (item.proteinPer100 ?? 0) * factor,
+    salt: (item.saltPer100 ?? 0) * factor,
+    fiber: (item.fiberPer100 ?? 0) * factor,
   };
 }
 
@@ -59,11 +40,8 @@ export async function calculateDraftItemNutrition(
 /**
  * Sum up nutrition values for a list of meal items.
  */
-export async function calculateMealNutrition(
-  items: MealItem[],
-): Promise<NutritionValues> {
-  const results = await Promise.all(items.map(calculateMealItemNutrition));
-  return sumNutrition(results);
+export function calculateMealNutrition(items: MealItem[]): NutritionValues {
+  return sumNutrition(items.map(calculateMealItemNutrition));
 }
 
 /**

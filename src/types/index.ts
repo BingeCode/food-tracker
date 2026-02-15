@@ -41,7 +41,6 @@ export interface Meal {
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   name: string;
-  isManual: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,20 +49,21 @@ export interface MealItem {
   id?: number;
   mealId: number;
   ingredientId?: number;
+  name: string;
   amount: number;
+  unit: "g" | "ml";
   sourceRecipeName?: string;
   sourceRecipeBaseAmount?: number;
   sourceRecipePortions?: number;
   sourceRecipeTotalServings?: number;
-  // Manual entry fields (used when isManual or no ingredientId)
-  manualName?: string;
-  manualCalories?: number;
-  manualFat?: number;
-  manualCarbs?: number;
-  manualSugar?: number;
-  manualProtein?: number;
-  manualSalt?: number;
-  manualFiber?: number;
+  // Nutrition per 100g/100ml (snapshot at save time)
+  caloriesPer100: number;
+  fatPer100: number;
+  carbsPer100: number;
+  sugarPer100: number;
+  proteinPer100: number;
+  saltPer100: number;
+  fiberPer100: number;
 }
 
 // ── Goals ───────────────────────────────────────────────────
@@ -123,9 +123,6 @@ export interface MealItemDraft {
   proteinPer100: number;
   saltPer100: number;
   fiberPer100: number;
-
-  // Legacy manual fields (optional, if we want to differentiate source)
-  manualName?: string;
 }
 
 export interface MealDraft {
@@ -134,20 +131,7 @@ export interface MealDraft {
   editId?: number;
   date: string; // YYYY-MM-DD
   time: string;
-  inputMode: "search" | "manual";
-  sourceRecipeId?: number;
-  originalIngredientIds?: number[];
   items: MealItemDraft[];
-  // Manual mode fields
-  manualName?: string;
-  manualCalories?: number;
-  manualFat?: number;
-  manualCarbs?: number;
-  manualSugar?: number;
-  manualProtein?: number;
-  manualSalt?: number;
-  manualFiber?: number;
-  saveAsRecipe: boolean;
 }
 
 export interface RecipeDraft {

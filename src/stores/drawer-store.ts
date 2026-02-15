@@ -24,9 +24,7 @@ const defaultMealDraft: MealDraft = {
   mode: "create",
   time: getTimeNow(),
   date: getToday(),
-  inputMode: "search",
   items: [],
-  saveAsRecipe: false,
 };
 
 const defaultRecipeDraft: RecipeDraft = {

@@ -58,51 +58,23 @@ export function MealDrawerContent() {
             .equals(meal.id!)
             .toArray();
 
-          const draftItems: MealItemDraft[] = [];
-
-          for (const item of dbItems) {
-            if (item.ingredientId) {
-              const ing = await db.ingredients.get(item.ingredientId);
-              if (ing) {
-                draftItems.push({
-                  ingredientId: ing.id,
-                  name: ing.name,
-                  amount: item.amount,
-                  sourceRecipeName: item.sourceRecipeName,
-                  sourceRecipeBaseAmount: item.sourceRecipeBaseAmount,
-                  sourceRecipePortions: item.sourceRecipePortions,
-                  sourceRecipeTotalServings: item.sourceRecipeTotalServings,
-                  unit: ing.unit,
-                  caloriesPer100: ing.calories,
-                  fatPer100: ing.fat,
-                  carbsPer100: ing.carbs,
-                  sugarPer100: ing.sugar,
-                  proteinPer100: ing.protein,
-                  saltPer100: ing.salt,
-                  fiberPer100: ing.fiber,
-                });
-              }
-            } else {
-              // Manual item logic
-              // Stored manual values are total for entry.
-              // Convert to Per100 for draft consistency.
-              const factor = item.amount > 0 ? 100 / item.amount : 0;
-
-              draftItems.push({
-                name: item.manualName || "Unbekannt",
-                amount: item.amount,
-                unit: "g",
-                manualName: item.manualName,
-                caloriesPer100: (item.manualCalories || 0) * factor,
-                fatPer100: (item.manualFat || 0) * factor,
-                carbsPer100: (item.manualCarbs || 0) * factor,
-                sugarPer100: (item.manualSugar || 0) * factor,
-                proteinPer100: (item.manualProtein || 0) * factor,
-                saltPer100: (item.manualSalt || 0) * factor,
-                fiberPer100: (item.manualFiber || 0) * factor,
-              });
-            }
-          }
+          const draftItems: MealItemDraft[] = dbItems.map((item) => ({
+            ingredientId: item.ingredientId,
+            name: item.name,
+            amount: item.amount,
+            unit: item.unit,
+            sourceRecipeName: item.sourceRecipeName,
+            sourceRecipeBaseAmount: item.sourceRecipeBaseAmount,
+            sourceRecipePortions: item.sourceRecipePortions,
+            sourceRecipeTotalServings: item.sourceRecipeTotalServings,
+            caloriesPer100: item.caloriesPer100,
+            fatPer100: item.fatPer100,
+            carbsPer100: item.carbsPer100,
+            sugarPer100: item.sugarPer100,
+            proteinPer100: item.proteinPer100,
+            saltPer100: item.saltPer100,
+            fiberPer100: item.fiberPer100,
+          }));
 
           updateMealDraft({
             date: meal.date,
@@ -206,7 +178,6 @@ export function MealDrawerContent() {
           proteinPer100: product.protein,
           saltPer100: product.salt,
           fiberPer100: product.fiber,
-          manualName: product.name,
         };
         addMealItem(newItem);
         return;
@@ -237,7 +208,6 @@ export function MealDrawerContent() {
         date,
         time,
         name: mealName,
-        isManual: false,
         updatedAt: new Date(),
       };
 
@@ -262,36 +232,24 @@ export function MealDrawerContent() {
       }
 
       // Add items
-      const mealItemsToInsert: Omit<MealItem, "id">[] = items.map((item) => {
-        const factor = item.amount / 100;
-        return {
-          mealId: currentMealId!,
-          ingredientId: item.ingredientId,
-          amount: item.amount,
-          sourceRecipeName: item.sourceRecipeName,
-          sourceRecipeBaseAmount: item.sourceRecipeBaseAmount,
-          sourceRecipePortions: item.sourceRecipePortions,
-          sourceRecipeTotalServings: item.sourceRecipeTotalServings,
-          manualName: item.ingredientId ? undefined : item.name,
-          manualCalories: item.ingredientId
-            ? undefined
-            : item.caloriesPer100 * factor,
-          manualFat: item.ingredientId ? undefined : item.fatPer100 * factor,
-          manualCarbs: item.ingredientId
-            ? undefined
-            : item.carbsPer100 * factor,
-          manualSugar: item.ingredientId
-            ? undefined
-            : item.sugarPer100 * factor,
-          manualProtein: item.ingredientId
-            ? undefined
-            : item.proteinPer100 * factor,
-          manualSalt: item.ingredientId ? undefined : item.saltPer100 * factor,
-          manualFiber: item.ingredientId
-            ? undefined
-            : item.fiberPer100 * factor,
-        };
-      });
+      const mealItemsToInsert: Omit<MealItem, "id">[] = items.map((item) => ({
+        mealId: currentMealId!,
+        ingredientId: item.ingredientId,
+        name: item.name,
+        amount: item.amount,
+        unit: item.unit,
+        sourceRecipeName: item.sourceRecipeName,
+        sourceRecipeBaseAmount: item.sourceRecipeBaseAmount,
+        sourceRecipePortions: item.sourceRecipePortions,
+        sourceRecipeTotalServings: item.sourceRecipeTotalServings,
+        caloriesPer100: item.caloriesPer100,
+        fatPer100: item.fatPer100,
+        carbsPer100: item.carbsPer100,
+        sugarPer100: item.sugarPer100,
+        proteinPer100: item.proteinPer100,
+        saltPer100: item.saltPer100,
+        fiberPer100: item.fiberPer100,
+      }));
 
       await Promise.all(
         mealItemsToInsert.map((mealItem) => db.mealItems.add(mealItem)),

@@ -2,6 +2,24 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import type { Meal, MealItem, Ingredient, NutritionValues } from "@/types";
 
+function calcNutrition(items: MealItem[]): NutritionValues {
+  return items.reduce(
+    (acc, item) => {
+      const factor = item.amount / 100;
+      return {
+        calories: acc.calories + (item.caloriesPer100 ?? 0) * factor,
+        fat: acc.fat + (item.fatPer100 ?? 0) * factor,
+        carbs: acc.carbs + (item.carbsPer100 ?? 0) * factor,
+        sugar: acc.sugar + (item.sugarPer100 ?? 0) * factor,
+        protein: acc.protein + (item.proteinPer100 ?? 0) * factor,
+        salt: acc.salt + (item.saltPer100 ?? 0) * factor,
+        fiber: acc.fiber + (item.fiberPer100 ?? 0) * factor,
+      };
+    },
+    { calories: 0, fat: 0, carbs: 0, sugar: 0, protein: 0, salt: 0, fiber: 0 },
+  );
+}
+
 /**
  * Live query for all meals on a given date, including their items
  * and computed nutrition values.
@@ -23,44 +41,7 @@ export function useMealsByDate(date: string): MealWithNutrition[] | undefined {
         .equals(meal.id!)
         .toArray();
 
-      let nutrition: NutritionValues = {
-        calories: 0,
-        fat: 0,
-        carbs: 0,
-        sugar: 0,
-        protein: 0,
-        salt: 0,
-        fiber: 0,
-      };
-
-      for (const item of items) {
-        if (item.ingredientId) {
-          const ingredient = await db.ingredients.get(item.ingredientId);
-          if (ingredient) {
-            const factor = item.amount / 100;
-            nutrition = {
-              calories: nutrition.calories + ingredient.calories * factor,
-              fat: nutrition.fat + ingredient.fat * factor,
-              carbs: nutrition.carbs + ingredient.carbs * factor,
-              sugar: nutrition.sugar + ingredient.sugar * factor,
-              protein: nutrition.protein + ingredient.protein * factor,
-              salt: nutrition.salt + ingredient.salt * factor,
-              fiber: nutrition.fiber + ingredient.fiber * factor,
-            };
-          }
-        } else {
-          // Manual entry
-          nutrition = {
-            calories: nutrition.calories + (item.manualCalories ?? 0),
-            fat: nutrition.fat + (item.manualFat ?? 0),
-            carbs: nutrition.carbs + (item.manualCarbs ?? 0),
-            sugar: nutrition.sugar + (item.manualSugar ?? 0),
-            protein: nutrition.protein + (item.manualProtein ?? 0),
-            salt: nutrition.salt + (item.manualSalt ?? 0),
-            fiber: nutrition.fiber + (item.manualFiber ?? 0),
-          };
-        }
-      }
+      const nutrition = calcNutrition(items);
 
       results.push({ ...meal, items, nutrition });
     }
@@ -144,45 +125,7 @@ export function useDayNutrition(date: string): NutritionValues | undefined {
       .anyOf(mealIds)
       .toArray();
 
-    let nutrition: NutritionValues = {
-      calories: 0,
-      fat: 0,
-      carbs: 0,
-      sugar: 0,
-      protein: 0,
-      salt: 0,
-      fiber: 0,
-    };
-
-    for (const item of allItems) {
-      if (item.ingredientId) {
-        const ingredient = await db.ingredients.get(item.ingredientId);
-        if (ingredient) {
-          const factor = item.amount / 100;
-          nutrition = {
-            calories: nutrition.calories + ingredient.calories * factor,
-            fat: nutrition.fat + ingredient.fat * factor,
-            carbs: nutrition.carbs + ingredient.carbs * factor,
-            sugar: nutrition.sugar + ingredient.sugar * factor,
-            protein: nutrition.protein + ingredient.protein * factor,
-            salt: nutrition.salt + ingredient.salt * factor,
-            fiber: nutrition.fiber + ingredient.fiber * factor,
-          };
-        }
-      } else {
-        nutrition = {
-          calories: nutrition.calories + (item.manualCalories ?? 0),
-          fat: nutrition.fat + (item.manualFat ?? 0),
-          carbs: nutrition.carbs + (item.manualCarbs ?? 0),
-          sugar: nutrition.sugar + (item.manualSugar ?? 0),
-          protein: nutrition.protein + (item.manualProtein ?? 0),
-          salt: nutrition.salt + (item.manualSalt ?? 0),
-          fiber: nutrition.fiber + (item.manualFiber ?? 0),
-        };
-      }
-    }
-
-    return nutrition;
+    return calcNutrition(allItems);
   }, [date]);
 }
 

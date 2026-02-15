@@ -121,7 +121,6 @@ export function RecipeDrawerContent() {
           proteinPer100: product.protein,
           saltPer100: product.salt,
           fiberPer100: product.fiber,
-          manualName: product.name,
         };
         addRecipeItem(newItem);
         return;
