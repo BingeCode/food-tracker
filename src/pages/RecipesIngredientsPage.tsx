@@ -9,7 +9,8 @@ import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 export function RecipesIngredientsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") === "ingredients" ? "ingredients" : "recipes";
+  const activeTab =
+    searchParams.get("tab") === "ingredients" ? "ingredients" : "recipes";
   const [searchTerm, setSearchTerm] = useState("");
 
   const setActiveTab = (tab: string) => {
