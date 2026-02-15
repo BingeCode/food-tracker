@@ -383,7 +383,7 @@ export function RecipesPage() {
               <span className="font-semibold text-foreground">
                 {Math.round(perServing.protein)}g
               </span>{" "}
-              Prot
+              P
             </div>
             <div>
               <span className="font-semibold text-foreground">
@@ -395,7 +395,7 @@ export function RecipesPage() {
               <span className="font-semibold text-foreground">
                 {Math.round(perServing.fat)}g
               </span>{" "}
-              Fett
+              F
             </div>
           </div>
         </div>

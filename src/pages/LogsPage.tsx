@@ -119,7 +119,7 @@ export function LogsPage() {
                   <span className="font-semibold text-foreground">
                     {Math.round(meal.nutrition.fat)}g
                   </span>{" "}
-                  Fett
+                  F
                 </div>
               </div>
             </div>
@@ -133,10 +133,9 @@ export function LogsPage() {
 
           <Button
             variant="outline"
-            className="w-full h-auto py-3 justify-start"
+            className="w-full h-auto py-3 justify-center"
             onClick={() => navigateTo(`/meal?date=${date}`)}>
             <Plus className="h-4 w-4" />
-            Mahlzeit hinzufügen
           </Button>
         </div>
       </div>

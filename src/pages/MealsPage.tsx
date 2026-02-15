@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IngredientSearch } from "@/components/IngredientSearch";
 import { db } from "@/lib/db";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ArrowLeft, Save, Trash2, X, Scan } from "lucide-react";
@@ -25,6 +25,7 @@ interface DraftItem {
   ingredientId: number;
   name: string;
   amount: number;
+  baseAmount: number;
   unit: "g" | "ml";
   calories: number;
   fat: number;
@@ -33,6 +34,7 @@ interface DraftItem {
   protein: number;
   salt: number;
   fiber: number;
+  fromRecipe?: boolean;
 }
 
 export function MealsPage() {
@@ -58,9 +60,22 @@ export function MealsPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isRecipeSearchFocused, setIsRecipeSearchFocused] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRecipeName, setSelectedRecipeName] = useState<string | null>(
+    null,
+  );
+  const [recipePortions, setRecipePortions] = useState(1);
 
+  const recipeSearchRef = useRef<HTMLInputElement>(null);
   const recipeQuery = searchTerm.trim().length > 0 ? searchTerm : undefined;
   const recipes = useRecipes(recipeQuery);
+
+  // Auto-focus recipe search on mount (create mode)
+  // Using a timeout to trigger the virtual keyboard on iOS
+  useEffect(() => {
+    if (mode === "create") {
+      recipeSearchRef.current?.focus();
+    }
+  }, [mode]);
 
   // Load meal data if editing
   useEffect(() => {
@@ -79,6 +94,7 @@ export function MealsPage() {
               ingredientId: item.ingredientId,
               name: ing?.name ?? "Unbekannt",
               amount: item.amount,
+              baseAmount: item.amount,
               unit: item.unit,
               calories: item.calories,
               fat: item.fat,
@@ -111,6 +127,7 @@ export function MealsPage() {
       ingredientId: ing.id,
       name: ing.name,
       amount: ing.defaultServing || 100,
+      baseAmount: ing.defaultServing || 100,
       unit: ing.unit,
       calories: ing.calories,
       fat: ing.fat,
@@ -133,10 +150,12 @@ export function MealsPage() {
       const ing = await db.ingredients.get(ri.ingredientId);
       if (!ing) continue;
 
+      const baseAmount = ri.amount / Math.max(1, recipe.servings);
       newItems.push({
         ingredientId: ing.id,
         name: ing.name,
-        amount: ri.amount / Math.max(1, recipe.servings),
+        amount: baseAmount,
+        baseAmount,
         unit: ing.unit,
         calories: ing.calories,
         fat: ing.fat,
@@ -145,12 +164,26 @@ export function MealsPage() {
         protein: ing.protein,
         salt: ing.salt,
         fiber: ing.fiber,
+        fromRecipe: true,
       });
     }
 
-    setItems((prev) => [...prev, ...newItems]);
-    setSearchTerm("");
+    // Replace any previous recipe items, keep loose ingredients
+    setItems((prev) => [
+      ...prev.filter((item) => !item.fromRecipe),
+      ...newItems,
+    ]);
+    setSelectedRecipeName(recipe.name);
+    setRecipePortions(1);
+    setSearchTerm(recipe.name);
     setIsRecipeSearchFocused(false);
+  };
+
+  const handleClearRecipe = () => {
+    setItems((prev) => prev.filter((item) => !item.fromRecipe));
+    setSelectedRecipeName(null);
+    setRecipePortions(1);
+    setSearchTerm("");
   };
 
   const handleScan = async (code: string) => {
@@ -193,11 +226,29 @@ export function MealsPage() {
     if (items.length === 0) return;
 
     try {
-      const ingredientNames = Array.from(
-        new Set(items.map((item) => item.name).filter(Boolean)),
-      );
-      const mealName =
-        ingredientNames.length > 0 ? ingredientNames.join(", ") : "Mahlzeit";
+      // Build meal name (only used on create)
+      let mealName: string | undefined;
+      if (mode === "create") {
+        if (selectedRecipeName) {
+          const parts: string[] = [];
+          parts.push(
+            recipePortions === 1
+              ? selectedRecipeName
+              : `${recipePortions} Portionen ${selectedRecipeName}`,
+          );
+          const hasLooseItems = items.some((item) => !item.fromRecipe);
+          if (hasLooseItems) parts.push("Weitere Zutaten");
+          mealName = parts.join(", ");
+        } else {
+          const ingredientNames = Array.from(
+            new Set(items.map((item) => item.name).filter(Boolean)),
+          );
+          mealName =
+            ingredientNames.length > 0
+              ? ingredientNames.join(", ")
+              : "Mahlzeit";
+        }
+      }
 
       let currentMealId = editId;
 
@@ -205,7 +256,6 @@ export function MealsPage() {
         await db.meals.update(editId, {
           date,
           time,
-          name: mealName,
           updatedAt: new Date(),
         });
         const oldItems = await db.mealIngredients
@@ -217,7 +267,7 @@ export function MealsPage() {
         currentMealId = await db.meals.add({
           date,
           time,
-          name: mealName,
+          name: mealName!,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -263,6 +313,58 @@ export function MealsPage() {
     }
   };
 
+  const handlePortionChange = (portions: number) => {
+    setRecipePortions(portions);
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.fromRecipe) {
+          return { ...item, amount: item.baseAmount * portions };
+        }
+        return item;
+      }),
+    );
+  };
+
+  const renderList = useMemo(() => {
+    const result: Array<
+      | { type: "header"; label: string; isRecipe: boolean; key: string }
+      | { type: "item"; item: DraftItem; index: number; key: string }
+    > = [];
+
+    const recipeItems = items
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.fromRecipe);
+    const looseItems = items
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => !item.fromRecipe);
+
+    if (recipeItems.length > 0 && selectedRecipeName) {
+      result.push({
+        type: "header",
+        label: selectedRecipeName,
+        isRecipe: true,
+        key: "header-recipe",
+      });
+      for (const { item, index } of recipeItems) {
+        result.push({ type: "item", item, index, key: `item-${index}` });
+      }
+    }
+
+    if (looseItems.length > 0) {
+      result.push({
+        type: "header",
+        label: "Weitere Zutaten",
+        isRecipe: false,
+        key: "header-loose",
+      });
+      for (const { item, index } of looseItems) {
+        result.push({ type: "item", item, index, key: `item-${index}` });
+      }
+    }
+
+    return result;
+  }, [items, selectedRecipeName]);
+
   const totals = useMemo(() => {
     return items.reduce(
       (acc, item) => {
@@ -306,23 +408,36 @@ export function MealsPage() {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-auto h-9 text-sm flex-1"
+          className="h-9 text-sm flex-1"
         />
         <Input
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          className="w-24 h-9 text-sm flex-1"
+          className="h-9 text-sm flex-1"
         />
       </div>
 
       <div className="relative">
         <Input
+          ref={recipeSearchRef}
           type="search"
           placeholder="Rezept suchen..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onFocus={() => setIsRecipeSearchFocused(true)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            if (selectedRecipeName) {
+              // User is editing the field after a selection — clear the recipe
+              handleClearRecipe();
+            }
+          }}
+          onFocus={() => {
+            setIsRecipeSearchFocused(true);
+            // If showing a selected recipe name, select all text so typing replaces it
+            if (selectedRecipeName) {
+              recipeSearchRef.current?.select();
+            }
+          }}
           onBlur={() => setTimeout(() => setIsRecipeSearchFocused(false), 200)}
           className="pr-9"
         />
@@ -331,14 +446,14 @@ export function MealsPage() {
           <button
             type="button"
             onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setSearchTerm("")}
+            onClick={handleClearRecipe}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             aria-label="Suche zurücksetzen">
             <X className="h-4 w-4" />
           </button>
         ) : null}
 
-        {isRecipeSearchFocused && searchTerm.trim().length > 0 ? (
+        {isRecipeSearchFocused && !selectedRecipeName ? (
           <div className="absolute top-full left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-background border rounded-md shadow-lg z-50">
             {!recipes || recipes.length === 0 ? (
               <div className="p-3 text-sm text-muted-foreground">
@@ -379,44 +494,73 @@ export function MealsPage() {
 
       {/* Items List */}
       <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
-        {items.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
-            <div className="flex-1 overflow-hidden">
-              <div className="font-medium text-sm truncate">{item.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {Math.round(item.calories)} kcal / 100{item.unit}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="relative w-24">
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  value={item.amount || ""}
-                  onChange={(e) =>
-                    updateItem(index, {
-                      amount: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="h-8 pr-8 text-right bg-background"
-                />
-                <span className="absolute right-3 top-2 text-xs text-muted-foreground">
-                  {item.unit}
+        {renderList.map((entry) => {
+          if (entry.type === "header") {
+            return (
+              <div
+                key={entry.key}
+                className="flex items-center justify-between pt-2 first:pt-0">
+                <span className="text-sm font-semibold text-muted-foreground">
+                  {entry.label}
                 </span>
+                {entry.isRecipe && (
+                  <select
+                    value={recipePortions}
+                    onChange={(e) =>
+                      handlePortionChange(Number(e.target.value))
+                    }
+                    className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground">
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n} {n === 1 ? "Portion" : "Portionen"}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                onClick={() => removeItem(index)}>
-                <X className="h-4 w-4" />
-              </Button>
+            );
+          }
+
+          const { item, index } = entry;
+          return (
+            <div
+              key={entry.key}
+              className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
+              <div className="flex-1 overflow-hidden">
+                <div className="font-medium text-sm truncate">{item.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {Math.round(item.calories)} kcal / 100{item.unit}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative w-24">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    value={item.amount ? Math.round(item.amount) : ""}
+                    onChange={(e) =>
+                      updateItem(index, {
+                        amount: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                    className="h-8 pr-8 text-right bg-background"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                    {item.unit}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                  onClick={() => removeItem(index)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Footer / Summary */}
@@ -444,7 +588,7 @@ export function MealsPage() {
             <span className="font-semibold text-foreground">
               {Math.round(totals.fat)}g
             </span>{" "}
-            Fett
+            F
           </div>
         </div>
 
